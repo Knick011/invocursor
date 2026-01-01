@@ -1,0 +1,231 @@
+{
+  "app": {
+    "name": "PheedLoop",
+    "description": "Event management software"
+  },
+  "pages": {
+    "overview": {
+      "description": "Event Overview",
+      "elements": {
+        "#event-name": {
+          "type": "text",
+          "label": "Event Name",
+          "synonyms": [
+            "event title",
+            "name of the event"
+          ]
+        },
+        "#event-description": {
+          "type": "text",
+          "label": "Description",
+          "synonyms": [
+            "event details",
+            "event info"
+          ]
+        },
+        "#start-date": {
+          "type": "text",
+          "label": "Start Date",
+          "synonyms": [
+            "event start date"
+          ]
+        },
+        "#end-date": {
+          "type": "text",
+          "label": "End Date",
+          "synonyms": [
+            "event end date"
+          ]
+        },
+        "#venue": {
+          "type": "text",
+          "label": "Venue",
+          "synonyms": [
+            "location",
+            "event place"
+          ]
+        }
+      }
+    },
+    "speakers": {
+      "description": "Speakers Management",
+      "elements": {
+        "#speaker-first-name": {
+          "type": "text",
+          "label": "First Name",
+          "synonyms": [
+            "speaker first name"
+          ]
+        },
+        "#speaker-last-name": {
+          "type": "text",
+          "label": "Last Name",
+          "synonyms": [
+            "speaker last name"
+          ]
+        },
+        "#speaker-email": {
+          "type": "text",
+          "label": "Email",
+          "synonyms": [
+            "speaker email address"
+          ]
+        },
+        "#speaker-company": {
+          "type": "text",
+          "label": "Company",
+          "synonyms": [
+            "speaker organization"
+          ]
+        },
+        "#speaker-bio": {
+          "type": "text",
+          "label": "Bio",
+          "synonyms": [
+            "speaker biography"
+          ]
+        },
+        "#save-speaker": {
+          "type": "button",
+          "label": "Save Speaker",
+          "synonyms": [
+            "add speaker",
+            "submit speaker"
+          ]
+        }
+      }
+    },
+    "sessions": {
+      "description": "Sessions Management",
+      "elements": {
+        "#session-title": {
+          "type": "text",
+          "label": "Session Title",
+          "synonyms": [
+            "session name",
+            "title of the session"
+          ]
+        },
+        "#session-track": {
+          "type": "select",
+          "label": "Track",
+          "synonyms": [
+            "session category"
+          ]
+        },
+        "#session-room": {
+          "type": "text",
+          "label": "Room",
+          "synonyms": [
+            "session location"
+          ]
+        },
+        "#session-duration": {
+          "type": "text",
+          "label": "Duration (minutes)",
+          "synonyms": [
+            "session length"
+          ]
+        },
+        "#save-session": {
+          "type": "button",
+          "label": "Save Session",
+          "synonyms": [
+            "add session",
+            "submit session"
+          ]
+        }
+      }
+    },
+    "registration": {
+      "description": "Registration Settings",
+      "elements": {
+        "#enable-registration": {
+          "type": "checkbox",
+          "label": "Enable Registration",
+          "synonyms": [
+            "registration on",
+            "allow registration"
+          ]
+        },
+        "#enable-waitlist": {
+          "type": "checkbox",
+          "label": "Enable Waitlist",
+          "synonyms": [
+            "waitlist on",
+            "allow waitlist"
+          ]
+        },
+        "#capacity": {
+          "type": "text",
+          "label": "Capacity Limit",
+          "synonyms": [
+            "maximum attendees",
+            "event capacity"
+          ]
+        },
+        "#ticket-price": {
+          "type": "text",
+          "label": "Ticket Price ($)",
+          "synonyms": [
+            "cost of ticket",
+            "price per ticket"
+          ]
+        }
+      }
+    },
+    "settings": {
+      "description": "Application Settings",
+      "elements": {
+        "#dark-mode": {
+          "type": "checkbox",
+          "label": "Dark Mode",
+          "synonyms": [
+            "night mode",
+            "dark theme"
+          ]
+        },
+        "#google-analytics": {
+          "type": "checkbox",
+          "label": "Google Analytics",
+          "synonyms": [
+            "GA tracking",
+            "analytics integration"
+          ]
+        },
+        "#hubspot": {
+          "type": "checkbox",
+          "label": "HubSpot",
+          "synonyms": [
+            "hubspot integration",
+            "sync with HubSpot"
+          ]
+        },
+        "#salesforce": {
+          "type": "checkbox",
+          "label": "Salesforce",
+          "synonyms": [
+            "salesforce integration",
+            "sync with Salesforce"
+          ]
+        },
+        "#email-notifications": {
+          "type": "checkbox",
+          "label": "Email Notifications",
+          "synonyms": [
+            "email alerts",
+            "send email updates"
+          ]
+        },
+        "#push-notifications": {
+          "type": "checkbox",
+          "label": "Push Notifications",
+          "synonyms": [
+            "mobile alerts",
+            "send push updates"
+          ]
+        }
+      }
+    }
+  }
+}

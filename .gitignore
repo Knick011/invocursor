@@ -1,0 +1,6 @@
+node_modules/
+.env
+data/api-keys.json
+data/request-logs.json
+.DS_Store
+*.log

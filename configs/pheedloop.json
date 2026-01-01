@@ -1,0 +1,88 @@
+{
+  "app": {
+    "name": "PheedLoop",
+    "description": "Event management software for conferences, trade shows, and meetings"
+  },
+
+  "pages": {
+    "overview": {
+      "description": "Basic event information - name, dates, venue",
+      "elements": {
+        "#event-name": { "type": "text", "label": "Event Name" },
+        "#event-description": { "type": "textarea", "label": "Event Description" },
+        "#start-date": { "type": "date", "label": "Start Date" },
+        "#end-date": { "type": "date", "label": "End Date" },
+        "#venue": { "type": "text", "label": "Venue/Location" }
+      }
+    },
+
+    "speakers": {
+      "description": "Manage speakers and presenters",
+      "elements": {
+        "#speaker-first-name": { "type": "text", "label": "First Name" },
+        "#speaker-last-name": { "type": "text", "label": "Last Name" },
+        "#speaker-email": { "type": "email", "label": "Email" },
+        "#speaker-company": { "type": "text", "label": "Company" },
+        "#speaker-bio": { "type": "textarea", "label": "Bio" },
+        "#save-speaker": { "type": "button", "label": "Save Speaker" }
+      }
+    },
+
+    "sessions": {
+      "description": "Manage talks, workshops, and presentations",
+      "elements": {
+        "#session-title": { "type": "text", "label": "Session Title" },
+        "#session-track": { "type": "select", "label": "Track", "options": ["main", "workshop", "breakout"] },
+        "#session-room": { "type": "text", "label": "Room" },
+        "#session-duration": { "type": "number", "label": "Duration (minutes)" },
+        "#save-session": { "type": "button", "label": "Save Session" }
+      }
+    },
+
+    "registration": {
+      "description": "Attendee registration settings",
+      "elements": {
+        "#enable-registration": { "type": "checkbox", "label": "Enable Registration" },
+        "#enable-waitlist": { "type": "checkbox", "label": "Enable Waitlist" },
+        "#capacity": { "type": "number", "label": "Capacity Limit" },
+        "#ticket-price": { "type": "number", "label": "Ticket Price ($)" }
+      }
+    },
+
+    "settings": {
+      "description": "App settings, integrations, and appearance",
+      "elements": {
+        "#dark-mode": {
+          "type": "checkbox",
+          "label": "Dark Mode",
+          "synonyms": ["night mode", "dark theme", "black theme"]
+        },
+        "#google-analytics": {
+          "type": "checkbox",
+          "label": "Google Analytics",
+          "synonyms": ["analytics", "tracking", "GA", "visitor tracking"]
+        },
+        "#hubspot": {
+          "type": "checkbox",
+          "label": "HubSpot Integration",
+          "synonyms": ["hubspot crm", "hubspot sync"]
+        },
+        "#salesforce": {
+          "type": "checkbox",
+          "label": "Salesforce Integration",
+          "synonyms": ["salesforce crm", "sfdc"]
+        },
+        "#email-notifications": {
+          "type": "checkbox",
+          "label": "Email Notifications",
+          "synonyms": ["email alerts", "send emails"]
+        },
+        "#push-notifications": {
+          "type": "checkbox",
+          "label": "Push Notifications",
+          "synonyms": ["mobile alerts", "push alerts"]
+        }
+      }
+    }
+  }
+}

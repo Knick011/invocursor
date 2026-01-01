@@ -1,0 +1,17 @@
+{
+  "name": "invocursor",
+  "version": "2.1.0",
+  "description": "AI-powered cursor assistant for web applications",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
