@@ -614,7 +614,18 @@ app.get('/admin/keys', (req, res) => {
 // STATIC FILES
 // ============================================
 
+// Landing page
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../landing.html'));
+});
+
+// Demo page
+app.get('/demo', (req, res) => {
+  res.sendFile(path.join(__dirname, '../test.html'));
+});
+
+// Test page (for iframe embed)
+app.get('/test.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../test.html'));
 });
 
