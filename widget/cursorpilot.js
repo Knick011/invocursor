@@ -6,7 +6,8 @@
 (function() {
   // Configuration - can be overridden via data attributes
   const SCRIPT = document.currentScript;
-  const API_URL = SCRIPT?.dataset?.api || 'http://localhost:3050';
+  // Auto-detect API URL: use data-api if provided, otherwise use same origin
+  const API_URL = SCRIPT?.dataset?.api || window.location.origin;
   const CONFIG_NAME = SCRIPT?.dataset?.config || 'pheedloop';
   const API_KEY = SCRIPT?.dataset?.apiKey || 'local';
 
