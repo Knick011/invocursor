@@ -50,6 +50,9 @@ app.use(express.json());
 // Serve widget files
 app.use('/widget', express.static(path.join(__dirname, '../widget')));
 
+// Serve assets (logo, images)
+app.use('/assets', express.static(path.join(__dirname, '../assets')));
+
 // ============================================
 // API KEY MANAGEMENT
 // ============================================
