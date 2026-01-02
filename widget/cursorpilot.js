@@ -22,37 +22,36 @@
   style.textContent = `
     #cp-widget {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 16px;
+      right: 16px;
       width: 380px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       z-index: 99999;
     }
 
     #cp-toggle {
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      background: transparent;
       border: none;
-      color: #fff;
       cursor: pointer;
       box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35);
       transition: transform 0.2s, box-shadow 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       padding: 0;
+      overflow: hidden;
     }
 
     #cp-toggle:hover {
-      transform: scale(1.05) rotate(-2deg);
+      transform: scale(1.08);
       box-shadow: 0 6px 25px rgba(245, 158, 11, 0.5);
     }
 
-    #cp-toggle svg {
-      width: 28px;
-      height: 28px;
+    #cp-toggle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 12px;
     }
 
     #cp-panel {
@@ -245,10 +244,7 @@
       </div>
     </div>
     <button id="cp-toggle">
-      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M6 6L14 28L17 18L27 15L6 6Z" fill="white" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
-        <path d="M17 18L25 26" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-      </svg>
+      <img src="${API_URL}/assets/logo.png" alt="Invocursor">
     </button>
   `;
   document.body.appendChild(widget);
