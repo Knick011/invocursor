@@ -32,19 +32,27 @@
     #cp-toggle {
       width: 56px;
       height: 56px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
       border: none;
       color: #fff;
-      font-size: 24px;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35);
       transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
     }
 
     #cp-toggle:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+      transform: scale(1.05) rotate(-2deg);
+      box-shadow: 0 6px 25px rgba(245, 158, 11, 0.5);
+    }
+
+    #cp-toggle svg {
+      width: 28px;
+      height: 28px;
     }
 
     #cp-panel {
@@ -57,7 +65,7 @@
     }
 
     #cp-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
       color: #fff;
       padding: 16px;
       display: flex;
@@ -107,12 +115,12 @@
 
     #cp-input:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: #f59e0b;
     }
 
     #cp-send {
       padding: 12px 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
       color: #fff;
       border: none;
       border-radius: 10px;
@@ -135,7 +143,7 @@
     }
 
     .cp-user {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
       color: #fff;
       margin-left: 40px;
     }
@@ -182,7 +190,7 @@
       pointer-events: none;
       z-index: 999999;
       opacity: 0;
-      filter: drop-shadow(0 2px 8px rgba(102, 126, 234, 0.5));
+      filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.6));
       transition: opacity 0.3s;
     }
 
@@ -196,7 +204,7 @@
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: rgba(102, 126, 234, 0.3);
+      background: rgba(245, 158, 11, 0.4);
       pointer-events: none;
       z-index: 999998;
       transform: scale(0);
@@ -214,7 +222,7 @@
 
     /* Highlight effect for target element */
     .cp-highlight {
-      outline: 3px solid #667eea !important;
+      outline: 3px solid #f59e0b !important;
       outline-offset: 2px;
       transition: outline 0.2s;
     }
@@ -236,7 +244,12 @@
         <button id="cp-send">Go</button>
       </div>
     </div>
-    <button id="cp-toggle">✨</button>
+    <button id="cp-toggle">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 6L14 28L17 18L27 15L6 6Z" fill="white" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M17 18L25 26" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </button>
   `;
   document.body.appendChild(widget);
 
@@ -244,7 +257,7 @@
   const cursor = document.createElement('div');
   cursor.id = 'cp-cursor';
   cursor.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24">
-    <path d="M4 4l7 17 2-7 7-2L4 4z" fill="#667eea" stroke="#fff" stroke-width="1.5"/>
+    <path d="M4 4l7 17 2-7 7-2L4 4z" fill="#f59e0b" stroke="#fff" stroke-width="1.5"/>
   </svg>`;
   document.body.appendChild(cursor);
 
