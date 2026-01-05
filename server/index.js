@@ -251,6 +251,83 @@ User wants: "${goal}"
 Output the JSON plan:`;
 }
 
+// Smart conversation system prompt - Learning & Support focused
+function buildSmartSystemPrompt(config) {
+  let pagesSummary = '';
+  for (const [pageName, pageData] of Object.entries(config.pages)) {
+    const elements = Object.keys(pageData.elements).join(', ');
+    pagesSummary += `- "${pageName}": ${pageData.description}. Elements: ${elements}\n`;
+  }
+
+  let elementsDetail = '';
+  for (const [pageName, pageData] of Object.entries(config.pages)) {
+    for (const [elementId, elementData] of Object.entries(pageData.elements)) {
+      let line = `${elementId} (${elementData.type}): "${elementData.label}"`;
+      if (elementData.synonyms) {
+        line += ` - also called: ${elementData.synonyms.join(', ')}`;
+      }
+      line += ` [on ${pageName} page]`;
+      elementsDetail += line + '\n';
+    }
+  }
+
+  return `You are a friendly learning assistant and support guide for ${config.app.name}.
+${config.app.description}
+
+Your role is to help users LEARN and UNDERSTAND this software, not just do things for them.
+
+PAGES:
+${pagesSummary}
+ALL ELEMENTS:
+${elementsDetail}
+
+Your primary goals:
+1. TEACH users how to use features - explain what things do and why
+2. GUIDE users through processes step-by-step
+3. TROUBLESHOOT issues - help diagnose and fix problems
+4. SUPPORT users with patience and encouragement
+5. PERFORM actions when users prefer you to do it for them
+
+ALWAYS respond with valid JSON in this format:
+{
+  "type": "response_type",
+  "message": "Your message to the user",
+  "plan": [...] // optional, only if performing actions
+}
+
+Response types:
+- "question": When you need more info OR want to understand what the user is trying to achieve
+- "explanation": When teaching about a feature or explaining how something works
+- "action": When performing actions for the user (include "plan" array)
+- "status": When reporting current state of settings or diagnosing issues
+- "error": When you can't help with the request
+
+For actions, the plan array uses these step types:
+- {"type":"navigate","target":"page-name"}
+- {"type":"toggle","target":"#element-id","value":true/false}
+- {"type":"type","target":"#element-id","value":"text"}
+- {"type":"click","target":"#element-id"}
+
+COMMUNICATION STYLE:
+- Be warm, patient, and encouraging - users are learning!
+- Explain the "why" not just the "what" - help them understand
+- When doing actions, explain what you're doing and why it helps
+- If user seems confused, offer to explain more or show them step-by-step
+- Use simple language, avoid jargon
+- Celebrate small wins - "Great question!" or "You've got it!"
+- Offer helpful tips: "Pro tip: You can also..."
+- If something goes wrong, reassure them and help troubleshoot
+
+TROUBLESHOOTING APPROACH:
+- First understand what they're trying to accomplish
+- Check current state to diagnose the issue
+- Explain what might be wrong in simple terms
+- Offer to fix it OR guide them through fixing it
+- Suggest how to avoid similar issues in future
+
+Always navigate to the correct page FIRST before performing actions.`;
+}
+
 // ============================================
 // AUTH MIDDLEWARE
 // ============================================
@@ -372,6 +449,65 @@ app.get('/api/stats', authMiddleware, (req, res) => {
     });
   } catch (e) {
     res.json({ error: e.message });
+  }
+});
+
+// ============================================
+// SMART CHAT ENDPOINT
+// ============================================
+
+app.post('/api/chat', authMiddleware, async (req, res) => {
+  const startTime = Date.now();
+  const { message, currentPage, currentState, history, configName = 'pheedloop' } = req.body;
+
+  console.log('\n=== SMART CHAT ===');
+  console.log('Message:', message);
+  console.log('Page:', currentPage);
+  console.log('State:', JSON.stringify(currentState || {}).substring(0, 200));
+
+  const config = loadConfig(configName);
+  if (!config) {
+    return res.json({ error: 'Config not found' });
+  }
+
+  try {
+    const systemPrompt = buildSmartSystemPrompt(config);
+
+    // Build context message with current state
+    let userMessage = `Current page: "${currentPage}"\n`;
+
+    if (currentState && Object.keys(currentState).length > 0) {
+      userMessage += `\nCurrent state of settings:\n`;
+      for (const [key, value] of Object.entries(currentState)) {
+        userMessage += `- ${key}: ${value}\n`;
+      }
+    }
+
+    // Add conversation history for context
+    if (history && history.length > 0) {
+      userMessage += `\nRecent conversation:\n`;
+      history.slice(-4).forEach(h => {
+        userMessage += `${h.role}: ${h.content}\n`;
+      });
+    }
+
+    userMessage += `\nUser says: "${message}"\n\nRespond with JSON:`;
+
+    const response = await callOpenAI(systemPrompt, userMessage, true);
+    console.log('Response:', response.substring(0, 300));
+
+    const parsed = JSON.parse(response);
+
+    logRequest(req.apiKey, message, configName, true, Date.now() - startTime);
+    res.json(parsed);
+
+  } catch (e) {
+    console.error('Error:', e.message);
+    logRequest(req.apiKey, message, configName, false, Date.now() - startTime);
+    res.json({
+      type: 'error',
+      message: 'Sorry, I had trouble understanding that. Could you try rephrasing?'
+    });
   }
 });
 

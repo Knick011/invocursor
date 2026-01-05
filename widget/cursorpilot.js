@@ -1,7 +1,7 @@
 /**
- * Invocursor Widget v2.1
- * Drop-in AI assistant for any web application
- * Now with smooth cursor animations!
+ * Invocursor Widget v3.0
+ * Sophisticated AI assistant with context awareness
+ * Features: Chat history, state reading, clarifying questions
  */
 (function() {
   // Configuration - can be overridden via data attributes
@@ -10,6 +10,7 @@
   const API_URL = SCRIPT?.dataset?.api || window.location.origin;
   const CONFIG_NAME = SCRIPT?.dataset?.config || 'pheedloop';
   const API_KEY = SCRIPT?.dataset?.apiKey || 'local';
+  const STORAGE_KEY = 'invocursor_history_' + CONFIG_NAME;
 
   // Animation settings (adjustable)
   const CURSOR_SPEED = 800;      // ms to move cursor
@@ -17,13 +18,53 @@
   const TYPE_SPEED = 50;         // ms per character
   const STEP_PAUSE = 500;        // ms between steps
 
+  // Chat history (persisted in localStorage)
+  let chatHistory = [];
+
+  // Load chat history from localStorage
+  function loadHistory() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        chatHistory = JSON.parse(saved);
+        // Keep only last 20 messages
+        if (chatHistory.length > 20) {
+          chatHistory = chatHistory.slice(-20);
+        }
+      }
+    } catch (e) {
+      chatHistory = [];
+    }
+  }
+
+  // Save chat history to localStorage
+  function saveHistory() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory.slice(-20)));
+    } catch (e) {
+      // localStorage might be full or disabled
+    }
+  }
+
+  // Add message to history
+  function addToHistory(role, content) {
+    chatHistory.push({ role, content, timestamp: Date.now() });
+    saveHistory();
+  }
+
+  // Clear chat history
+  function clearHistory() {
+    chatHistory = [];
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
   // Inject styles
   const style = document.createElement('style');
   style.textContent = `
     #cp-widget {
       position: fixed;
       bottom: 16px;
-      right: 16px;
+      right: 8px;
       width: 380px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       z-index: 99999;
@@ -78,7 +119,12 @@
       font-weight: 600;
     }
 
-    #cp-close {
+    #cp-header-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    #cp-clear, #cp-close {
       background: rgba(255,255,255,0.2);
       border: none;
       color: #fff;
@@ -86,7 +132,14 @@
       height: 28px;
       border-radius: 50%;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #cp-clear:hover, #cp-close:hover {
+      background: rgba(255,255,255,0.3);
     }
 
     #cp-log {
@@ -138,13 +191,37 @@
       padding: 10px 12px;
       border-radius: 10px;
       font-size: 13px;
-      line-height: 1.4;
+      line-height: 1.5;
     }
 
     .cp-user {
       background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
       color: #fff;
       margin-left: 40px;
+    }
+
+    .cp-assistant {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      margin-right: 40px;
+    }
+
+    .cp-question {
+      background: #fef3c7;
+      border: 1px solid #fbbf24;
+      margin-right: 40px;
+    }
+
+    .cp-explanation {
+      background: #eff6ff;
+      border: 1px solid #93c5fd;
+      margin-right: 40px;
+    }
+
+    .cp-status {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      margin-right: 40px;
     }
 
     .cp-plan {
@@ -179,6 +256,13 @@
       background: #fee2e2;
       border: 1px solid #fca5a5;
       color: #991b1b;
+    }
+
+    .cp-thinking {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: #64748b;
+      font-style: italic;
     }
 
     /* Cursor styles - improved */
@@ -234,8 +318,11 @@
   widget.innerHTML = `
     <div id="cp-panel">
       <div id="cp-header">
-        <h3>✨ Invocursor</h3>
-        <button id="cp-close">×</button>
+        <h3>Invocursor</h3>
+        <div id="cp-header-btns">
+          <button id="cp-clear" title="Clear chat">🗑</button>
+          <button id="cp-close">×</button>
+        </div>
       </div>
       <div id="cp-log"></div>
       <div id="cp-input-wrap">
@@ -275,6 +362,9 @@
   const input = document.getElementById('cp-input');
   const sendBtn = document.getElementById('cp-send');
 
+  // Load saved history
+  loadHistory();
+
   // Toggle panel
   toggle.onclick = () => {
     panel.style.display = 'block';
@@ -285,6 +375,12 @@
   document.getElementById('cp-close').onclick = () => {
     panel.style.display = 'none';
     toggle.style.display = 'block';
+  };
+
+  document.getElementById('cp-clear').onclick = () => {
+    clearHistory();
+    logEl.innerHTML = '';
+    log('Chat cleared. How can I help you?', 'cp-assistant');
   };
 
   // Helpers
@@ -306,6 +402,45 @@
     if (activeTab?.dataset?.page) return activeTab.dataset.page;
     const path = window.location.pathname.split('/').pop();
     return path || 'home';
+  }
+
+  // Read current state of all toggle elements and inputs
+  function getCurrentState() {
+    const state = {};
+
+    // Find all checkboxes/toggles
+    document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(el => {
+      const id = el.id || el.name;
+      if (id) {
+        // Try to get a human-readable label
+        const label = el.closest('label')?.textContent?.trim() ||
+                     document.querySelector(`label[for="${el.id}"]`)?.textContent?.trim() ||
+                     el.dataset?.label ||
+                     id;
+        state[label] = el.checked ? 'ON' : 'OFF';
+      }
+    });
+
+    // Find select dropdowns
+    document.querySelectorAll('select').forEach(el => {
+      const id = el.id || el.name;
+      if (id) {
+        const label = document.querySelector(`label[for="${el.id}"]`)?.textContent?.trim() || id;
+        const selectedOption = el.options[el.selectedIndex];
+        state[label] = selectedOption?.text || el.value;
+      }
+    });
+
+    // Find text inputs with values
+    document.querySelectorAll('input[type="text"], input[type="email"], input[type="number"], textarea').forEach(el => {
+      const id = el.id || el.name;
+      if (id && el.value) {
+        const label = document.querySelector(`label[for="${el.id}"]`)?.textContent?.trim() || id;
+        state[label] = el.value;
+      }
+    });
+
+    return state;
   }
 
   // Smooth cursor animation using requestAnimationFrame
@@ -435,6 +570,16 @@
       return { success: true };
     }
 
+    // Select (dropdown)
+    if (step.type === 'select') {
+      await showClick(cursorX + 12, cursorY + 12);
+      el.value = step.value;
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      await sleep(STEP_PAUSE);
+      hideCursor();
+      return { success: true };
+    }
+
     return { success: false, reason: 'Unknown action' };
   }
 
@@ -443,43 +588,12 @@
     if (step.type === 'toggle') return `${step.value ? 'Enable' : 'Disable'} <b>${step.target}</b>`;
     if (step.type === 'type') return `Type "${step.value}" in <b>${step.target}</b>`;
     if (step.type === 'click') return `Click <b>${step.target}</b>`;
+    if (step.type === 'select') return `Select "${step.value}" in <b>${step.target}</b>`;
     return JSON.stringify(step);
   }
 
-  // Main function
-  async function run(goal) {
-    logEl.innerHTML = '';
-    log(goal, 'cp-user');
-    log('🧠 Creating plan...', 'cp-plan');
-
-    // Get plan from API
-    let plan;
-    try {
-      const resp = await fetch(API_URL + '/api/plan', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': API_KEY
-        },
-        body: JSON.stringify({
-          goal,
-          currentPage: getCurrentPage(),
-          configName: CONFIG_NAME
-        })
-      });
-      const data = await resp.json();
-      if (data.error) throw new Error(data.error);
-      plan = data.plan;
-    } catch (e) {
-      log('Error: ' + e.message, 'cp-error');
-      return;
-    }
-
-    if (!plan?.length) {
-      log('Could not create a plan for this request', 'cp-error');
-      return;
-    }
-
+  // Execute a plan (array of steps)
+  async function executePlan(plan) {
     // Show plan
     let planHtml = '<b>Plan:</b><br>';
     plan.forEach((step, i) => {
@@ -508,19 +622,100 @@
       await sleep(400);
     }
 
-    log('✅ Done!', 'cp-done');
+    log('Done!', 'cp-done');
+  }
+
+  // Main chat function - uses smart /api/chat endpoint
+  async function chat(message) {
+    // Show user message
+    log(message, 'cp-user');
+    addToHistory('user', message);
+
+    // Show thinking indicator
+    const thinkingDiv = log('Thinking...', 'cp-thinking');
+
+    // Get current page and state
+    const currentPage = getCurrentPage();
+    const currentState = getCurrentState();
+
+    try {
+      const resp = await fetch(API_URL + '/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': API_KEY
+        },
+        body: JSON.stringify({
+          message,
+          currentPage,
+          currentState,
+          history: chatHistory.slice(-6), // Send last 6 messages for context
+          configName: CONFIG_NAME
+        })
+      });
+
+      const data = await resp.json();
+
+      // Remove thinking indicator
+      thinkingDiv.remove();
+
+      if (data.error) {
+        log('Error: ' + data.error, 'cp-error');
+        return;
+      }
+
+      // Handle different response types
+      const responseType = data.type || 'explanation';
+      const responseMessage = data.message || 'I understood your request.';
+
+      // Add AI response to history
+      addToHistory('assistant', responseMessage);
+
+      // Display based on type
+      switch (responseType) {
+        case 'question':
+          log('🤔 ' + responseMessage, 'cp-question');
+          break;
+
+        case 'explanation':
+          log(responseMessage, 'cp-explanation');
+          break;
+
+        case 'status':
+          log('📊 ' + responseMessage, 'cp-status');
+          break;
+
+        case 'action':
+          log(responseMessage, 'cp-assistant');
+          if (data.plan && data.plan.length > 0) {
+            await executePlan(data.plan);
+          }
+          break;
+
+        case 'error':
+          log(responseMessage, 'cp-error');
+          break;
+
+        default:
+          log(responseMessage, 'cp-assistant');
+      }
+
+    } catch (e) {
+      thinkingDiv.remove();
+      log('Connection error. Please try again.', 'cp-error');
+    }
   }
 
   // Send handler
   async function send() {
-    const goal = input.value.trim();
-    if (!goal) return;
+    const message = input.value.trim();
+    if (!message) return;
 
     input.value = '';
     input.disabled = true;
     sendBtn.disabled = true;
 
-    await run(goal);
+    await chat(message);
 
     input.disabled = false;
     sendBtn.disabled = false;
@@ -530,6 +725,6 @@
   sendBtn.onclick = send;
   input.onkeydown = e => { if (e.key === 'Enter') send(); };
 
-  // Ready
-  log('👋 Hi! Tell me what you\'d like to do.', 'cp-done');
+  // Ready - show welcome message
+  log('Hi! I\'m here to help you learn and use this application. Ask me anything - whether you need help finding a feature, understanding how something works, or troubleshooting an issue.', 'cp-assistant');
 })();
