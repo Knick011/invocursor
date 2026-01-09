@@ -21,16 +21,55 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
+// ============================================
+// TIER DEFINITIONS (Weekly Limits)
+// ============================================
+
+const TIERS = {
+  free: {
+    name: 'Free',
+    weeklyLimit: 50,
+    description: 'Free tier - 50 requests/week'
+  },
+  starter: {
+    name: 'Starter',
+    weeklyLimit: 1000,
+    description: 'Starter tier - 1,000 requests/week'
+  },
+  growth: {
+    name: 'Growth',
+    weeklyLimit: 5000,
+    description: 'Growth tier - 5,000 requests/week'
+  }
+};
+
+// Helper to get the start of the current week (Monday)
+function getWeekStart() {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+  const monday = new Date(now.setDate(diff));
+  return monday.toISOString().split('T')[0];
+}
+
 // Initialize files if they don't exist
 if (!fs.existsSync(API_KEYS_FILE)) {
   fs.writeFileSync(API_KEYS_FILE, JSON.stringify({
     keys: {
       "inv_demo_12345": {
         name: "Demo Account",
+        tier: "starter",
         configs: ["pheedloop"],
-        rateLimit: 100,
-        requestsToday: 0,
-        lastReset: new Date().toISOString().split('T')[0],
+        requestsThisWeek: 0,
+        weekStart: getWeekStart(),
+        created: new Date().toISOString()
+      },
+      "inv_free_trial": {
+        name: "Free Trial",
+        tier: "free",
+        configs: ["*"],
+        requestsThisWeek: 0,
+        weekStart: getWeekStart(),
         created: new Date().toISOString()
       }
     }
@@ -78,7 +117,7 @@ function validateApiKey(apiKey) {
   if (!apiKey) return { valid: false, error: 'API key required' };
 
   if (apiKey === 'local' || apiKey === 'dev') {
-    return { valid: true, keyData: { name: 'Local Dev', configs: ['*'], rateLimit: 1000 } };
+    return { valid: true, keyData: { name: 'Local Dev', configs: ['*'], tier: 'growth' } };
   }
 
   const data = loadApiKeys();
@@ -92,24 +131,41 @@ function validateApiKey(apiKey) {
 }
 
 // ============================================
-// RATE LIMITING
+// RATE LIMITING (Weekly)
 // ============================================
 
 function checkRateLimit(apiKey, keyData) {
-  const today = new Date().toISOString().split('T')[0];
+  const currentWeekStart = getWeekStart();
 
-  if (!rateLimits.has(apiKey) || rateLimits.get(apiKey).date !== today) {
-    rateLimits.set(apiKey, { date: today, count: 0 });
+  // Get the tier limit (default to starter if not specified)
+  const tier = keyData.tier || 'starter';
+  const tierConfig = TIERS[tier] || TIERS.starter;
+  const weeklyLimit = tierConfig.weeklyLimit;
+
+  // Check if we need to reset (new week)
+  if (!rateLimits.has(apiKey) || rateLimits.get(apiKey).weekStart !== currentWeekStart) {
+    rateLimits.set(apiKey, { weekStart: currentWeekStart, count: 0 });
   }
 
   const limit = rateLimits.get(apiKey);
 
-  if (limit.count >= keyData.rateLimit) {
-    return { allowed: false, remaining: 0 };
+  if (limit.count >= weeklyLimit) {
+    return {
+      allowed: false,
+      remaining: 0,
+      tier: tier,
+      weeklyLimit: weeklyLimit,
+      resetAt: 'next Monday'
+    };
   }
 
   limit.count++;
-  return { allowed: true, remaining: keyData.rateLimit - limit.count };
+  return {
+    allowed: true,
+    remaining: weeklyLimit - limit.count,
+    tier: tier,
+    weeklyLimit: weeklyLimit
+  };
 }
 
 // ============================================
@@ -392,16 +448,23 @@ function authMiddleware(req, res, next) {
   const rateCheck = checkRateLimit(apiKey, validation.keyData);
   if (!rateCheck.allowed) {
     return res.status(429).json({
-      error: 'Rate limit exceeded',
-      resetAt: 'midnight UTC'
+      error: 'Weekly rate limit exceeded',
+      tier: rateCheck.tier,
+      weeklyLimit: rateCheck.weeklyLimit,
+      resetAt: rateCheck.resetAt,
+      upgradeInfo: 'Contact us to upgrade your tier for more requests'
     });
   }
 
   req.apiKey = apiKey;
   req.keyData = validation.keyData;
   req.rateRemaining = rateCheck.remaining;
+  req.tier = rateCheck.tier;
+  req.weeklyLimit = rateCheck.weeklyLimit;
 
   res.set('X-RateLimit-Remaining', rateCheck.remaining);
+  res.set('X-RateLimit-Limit', rateCheck.weeklyLimit);
+  res.set('X-RateLimit-Tier', rateCheck.tier);
 
   next();
 }
@@ -485,15 +548,19 @@ app.get('/api/stats', authMiddleware, (req, res) => {
     const keyPrefix = req.apiKey.substring(0, 10) + '...';
 
     const myLogs = logs.logs.filter(l => l.apiKey === keyPrefix);
-    const today = new Date().toISOString().split('T')[0];
-    const todayLogs = myLogs.filter(l => l.timestamp.startsWith(today));
+
+    // Get current week's logs
+    const weekStart = getWeekStart();
+    const weekLogs = myLogs.filter(l => l.timestamp >= weekStart);
 
     res.json({
       totalRequests: myLogs.length,
-      todayRequests: todayLogs.length,
+      weekRequests: weekLogs.length,
       successRate: myLogs.length > 0
         ? Math.round(myLogs.filter(l => l.success).length / myLogs.length * 100)
         : 0,
+      tier: req.tier,
+      weeklyLimit: req.weeklyLimit,
       rateRemaining: req.rateRemaining
     });
   } catch (e) {
@@ -752,10 +819,15 @@ app.post('/api/generate-config-from-html', authMiddleware, async (req, res) => {
 // ============================================
 
 app.post('/admin/keys', (req, res) => {
-  const { name, configs = [], rateLimit = 100, adminSecret } = req.body;
+  const { name, configs = [], tier = 'starter', adminSecret } = req.body;
 
   if (adminSecret !== 'invocursor-admin-2024') {
     return res.status(401).json({ error: 'Invalid admin secret' });
+  }
+
+  // Validate tier
+  if (!TIERS[tier]) {
+    return res.status(400).json({ error: `Invalid tier. Must be one of: ${Object.keys(TIERS).join(', ')}` });
   }
 
   const newKey = generateApiKey();
@@ -763,18 +835,21 @@ app.post('/admin/keys', (req, res) => {
 
   data.keys[newKey] = {
     name: name || 'New Account',
+    tier: tier,
     configs: configs,
-    rateLimit: rateLimit,
-    requestsToday: 0,
-    lastReset: new Date().toISOString().split('T')[0],
+    requestsThisWeek: 0,
+    weekStart: getWeekStart(),
     created: new Date().toISOString()
   };
 
   saveApiKeys(data);
 
+  const tierConfig = TIERS[tier];
   res.json({
     apiKey: newKey,
-    message: 'API key created successfully'
+    tier: tier,
+    weeklyLimit: tierConfig.weeklyLimit,
+    message: `API key created successfully with ${tierConfig.name} tier (${tierConfig.weeklyLimit} requests/week)`
   });
 });
 
@@ -788,15 +863,18 @@ app.get('/admin/keys', (req, res) => {
   const masked = {};
 
   for (const [key, value] of Object.entries(data.keys)) {
+    const tier = value.tier || 'starter';
+    const tierConfig = TIERS[tier] || TIERS.starter;
     masked[key.substring(0, 10) + '...'] = {
       name: value.name,
+      tier: tier,
+      weeklyLimit: tierConfig.weeklyLimit,
       configs: value.configs,
-      rateLimit: value.rateLimit,
       created: value.created
     };
   }
 
-  res.json({ keys: masked });
+  res.json({ keys: masked, tiers: TIERS });
 });
 
 // ============================================
