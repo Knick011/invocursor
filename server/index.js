@@ -33,13 +33,13 @@ const TIERS = {
   },
   starter: {
     name: 'Starter',
-    weeklyLimit: 1000,
-    description: 'Starter tier - 1,000 requests/week'
+    weeklyLimit: 1500,
+    description: 'Starter tier - 1,500 requests/week'
   },
   growth: {
     name: 'Growth',
-    weeklyLimit: 5000,
-    description: 'Growth tier - 5,000 requests/week'
+    weeklyLimit: 6500,
+    description: 'Growth tier - 6,500 requests/week'
   }
 };
 
