@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Setup Your Invocursor - Customer Onboarding</title>
+  <title>Get Started with Invocursor - Custom Setup</title>
   <link rel="icon" type="image/png" href="/assets/logo.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -18,7 +18,6 @@
       --text-muted: #a1a1aa;
       --border: #27272a;
       --success: #22c55e;
-      --error: #ef4444;
     }
 
     body {
@@ -54,106 +53,113 @@
     }
 
     .container {
-      max-width: 900px;
+      max-width: 800px;
       margin: 0 auto;
       padding: 3rem 2rem;
     }
 
     h1 {
-      font-size: 2rem;
+      font-size: 2.5rem;
       margin-bottom: 0.5rem;
+      text-align: center;
+    }
+
+    h1 span {
+      color: var(--accent);
     }
 
     .subtitle {
       color: var(--text-muted);
-      margin-bottom: 2rem;
-    }
-
-    /* Progress Steps */
-    .progress-steps {
-      display: flex;
       margin-bottom: 3rem;
-      position: relative;
-    }
-
-    .progress-steps::before {
-      content: '';
-      position: absolute;
-      top: 20px;
-      left: 40px;
-      right: 40px;
-      height: 2px;
-      background: var(--border);
-    }
-
-    .step-item {
-      flex: 1;
       text-align: center;
-      position: relative;
+      font-size: 1.1rem;
     }
 
-    .step-number {
+    /* Process Steps */
+    .process {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .process-step {
+      text-align: center;
+      padding: 1.5rem;
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .process-number {
       width: 40px;
       height: 40px;
+      background: var(--accent);
+      color: var(--bg-dark);
       border-radius: 50%;
-      background: var(--bg-card);
-      border: 2px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 0.5rem;
-      font-weight: 600;
-      position: relative;
-      z-index: 1;
+      font-weight: 700;
+      margin: 0 auto 1rem;
     }
 
-    .step-item.active .step-number {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: var(--bg-dark);
+    .process-step h3 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
     }
 
-    .step-item.completed .step-number {
-      background: var(--success);
-      border-color: var(--success);
-      color: white;
-    }
-
-    .step-label {
-      font-size: 0.875rem;
+    .process-step p {
       color: var(--text-muted);
+      font-size: 0.875rem;
     }
 
-    .step-item.active .step-label {
-      color: var(--text);
-      font-weight: 500;
-    }
-
-    /* Cards */
+    /* Form Card */
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 2rem;
-      margin-bottom: 1.5rem;
+      padding: 2.5rem;
     }
 
     .card h2 {
-      font-size: 1.25rem;
-      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card > p {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    .form-section {
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .form-section:last-of-type {
+      border-bottom: none;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0;
+    }
+
+    .form-section h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.25rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
 
-    .card p {
+    .form-section > p {
       color: var(--text-muted);
-      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
     }
 
-    /* Forms */
     .form-group {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
     }
 
     label {
@@ -168,6 +174,10 @@
       font-size: 0.875rem;
     }
 
+    .required {
+      color: var(--cta);
+    }
+
     input, textarea, select {
       width: 100%;
       padding: 0.875rem 1rem;
@@ -177,6 +187,7 @@
       color: var(--text);
       font-size: 1rem;
       font-family: inherit;
+      transition: border-color 0.2s;
     }
 
     input:focus, textarea:focus, select:focus {
@@ -189,9 +200,146 @@
       resize: vertical;
     }
 
-    .btn {
-      padding: 0.875rem 1.5rem;
+    /* Links input area */
+    .links-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .link-entry {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .link-entry input {
+      flex: 1;
+    }
+
+    .remove-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 40px;
       border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.25rem;
+      transition: all 0.2s;
+    }
+
+    .remove-btn:hover {
+      border-color: #ef4444;
+      color: #ef4444;
+    }
+
+    .add-link-btn {
+      background: none;
+      border: 1px dashed var(--border);
+      color: var(--text-muted);
+      padding: 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+
+    .add-link-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* File upload */
+    .file-upload {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .file-upload:hover {
+      border-color: var(--accent);
+    }
+
+    .file-upload.dragover {
+      border-color: var(--accent);
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    .file-upload-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .file-upload p {
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .file-upload span {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    .file-list {
+      margin-top: 1rem;
+      text-align: left;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      background: var(--bg-dark);
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .file-item .remove-file {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    /* Checkboxes */
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      cursor: pointer;
+    }
+
+    .checkbox-item input {
+      width: auto;
+      margin-top: 0.25rem;
+    }
+
+    .checkbox-item label {
+      cursor: pointer;
+      font-weight: 400;
+    }
+
+    .checkbox-item p {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    /* Submit Button */
+    .btn {
+      padding: 1rem 2rem;
+      border-radius: 10px;
       font-weight: 600;
       cursor: pointer;
       border: none;
@@ -202,270 +350,112 @@
     .btn-primary {
       background: var(--cta);
       color: white;
+      width: 100%;
     }
 
     .btn-primary:hover {
       background: #f97316;
+      transform: translateY(-2px);
     }
 
-    .btn-secondary {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text);
-    }
-
-    .btn-secondary:hover {
-      border-color: var(--accent);
-    }
-
-    .btn:disabled {
+    .btn-primary:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+      transform: none;
     }
 
-    .btn-group {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-
-    /* Tabs */
-    .tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .tab {
-      padding: 0.75rem 1.25rem;
-      border-radius: 8px;
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-
-    .tab.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: var(--bg-dark);
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    /* Code Block */
-    .code-block {
-      background: #1a1a2e;
-      border-radius: 8px;
-      padding: 1rem;
-      overflow-x: auto;
-      position: relative;
-    }
-
-    .code-block code {
-      font-family: 'Monaco', 'Consolas', monospace;
-      font-size: 0.875rem;
-      color: #e2e8f0;
-      white-space: pre;
-    }
-
-    .copy-btn {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      background: var(--border);
-      border: none;
-      border-radius: 4px;
-      color: var(--text);
-      cursor: pointer;
-      font-size: 0.75rem;
-    }
-
-    .copy-btn:hover {
-      background: var(--accent);
-      color: var(--bg-dark);
-    }
-
-    /* Page Builder */
-    .page-entry {
+    /* What happens next */
+    .next-steps {
+      margin-top: 2rem;
+      padding: 1.5rem;
       background: var(--bg-dark);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
+      border-radius: 12px;
+    }
+
+    .next-steps h4 {
       margin-bottom: 1rem;
-    }
-
-    .page-entry-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-
-    .page-entry h4 {
-      font-size: 1rem;
-    }
-
-    .remove-btn {
-      background: none;
-      border: none;
-      color: var(--error);
-      cursor: pointer;
-      font-size: 1.25rem;
-    }
-
-    .element-list {
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-    }
-
-    .element-entry {
-      display: grid;
-      grid-template-columns: 1fr 1fr 120px auto;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .element-entry input, .element-entry select {
-      padding: 0.5rem;
-      font-size: 0.875rem;
-    }
-
-    .add-btn {
-      background: none;
-      border: 1px dashed var(--border);
-      border-radius: 8px;
-      padding: 0.75rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      width: 100%;
-      text-align: center;
-      transition: all 0.2s;
-    }
-
-    .add-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    /* Status Messages */
-    .status {
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
-    }
-
-    .status.success {
-      background: rgba(34, 197, 94, 0.1);
-      border: 1px solid var(--success);
-      color: var(--success);
-    }
-
-    .status.error {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid var(--error);
-      color: var(--error);
-    }
-
-    .status.loading {
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid var(--accent);
-      color: var(--accent);
-    }
-
-    /* API Key Display */
-    .api-key-display {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      background: var(--bg-dark);
-      padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
     }
 
-    .api-key-display input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: var(--accent);
-      font-family: monospace;
-      font-size: 1rem;
-    }
-
-    /* Hidden sections */
-    .section {
-      display: none;
-    }
-
-    .section.active {
-      display: block;
-    }
-
-    /* Checklist */
-    .checklist {
+    .next-steps ul {
       list-style: none;
+      color: var(--text-muted);
     }
 
-    .checklist li {
-      padding: 0.75rem 0;
+    .next-steps li {
+      padding: 0.5rem 0;
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 0.75rem;
-      border-bottom: 1px solid var(--border);
     }
 
-    .checklist li:last-child {
-      border-bottom: none;
+    .next-steps li::before {
+      content: "→";
+      color: var(--accent);
     }
 
-    .check-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
+    /* Success State */
+    .success-message {
+      text-align: center;
+      padding: 3rem;
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
       background: var(--success);
-      color: white;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
+      margin: 0 auto 1.5rem;
+      font-size: 2.5rem;
     }
 
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-      margin: 1.5rem 0;
+    .success-message h2 {
+      margin-bottom: 1rem;
     }
 
-    .feature-item {
-      background: var(--bg-dark);
-      padding: 1rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-
-    .feature-item h4 {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.25rem;
-    }
-
-    .feature-item p {
+    .success-message p {
       color: var(--text-muted);
-      font-size: 0.875rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Pricing Note */
+    .pricing-note {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(234, 88, 12, 0.1) 100%);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .pricing-note h4 {
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .pricing-note p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
       margin: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .process {
+        grid-template-columns: 1fr;
+      }
+
+      .container {
+        padding: 2rem 1rem;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+      }
     }
   </style>
 </head>
@@ -479,484 +469,306 @@
 </nav>
 
 <div class="container">
-  <h1>Setup Invocursor</h1>
-  <p class="subtitle">Let's get your AI assistant running in under 5 minutes</p>
+  <h1>Let's set up your <span>AI assistant</span></h1>
+  <p class="subtitle">Submit your documentation and we'll configure everything for you. No technical work required.</p>
 
-  <!-- Progress Steps -->
-  <div class="progress-steps">
-    <div class="step-item active" data-step="1">
-      <div class="step-number">1</div>
-      <div class="step-label">Describe App</div>
+  <!-- Process Overview -->
+  <div class="process">
+    <div class="process-step">
+      <div class="process-number">1</div>
+      <h3>Submit Your Docs</h3>
+      <p>Share your help docs, tutorials, or knowledge base links</p>
     </div>
-    <div class="step-item" data-step="2">
-      <div class="step-number">2</div>
-      <div class="step-label">Configure</div>
+    <div class="process-step">
+      <div class="process-number">2</div>
+      <h3>We Configure It</h3>
+      <p>We analyze your docs and build a custom AI config</p>
     </div>
-    <div class="step-item" data-step="3">
-      <div class="step-number">3</div>
-      <div class="step-label">Integrate</div>
-    </div>
-    <div class="step-item" data-step="4">
-      <div class="step-number">4</div>
-      <div class="step-label">Test</div>
-    </div>
-  </div>
-
-  <!-- Step 1: Describe Your App -->
-  <div class="section active" id="step1">
-    <div class="card">
-      <h2>Tell us about your application</h2>
-      <p>This helps our AI understand your software and assist your users better.</p>
-
-      <div class="form-group">
-        <label>App Name</label>
-        <input type="text" id="app-name" placeholder="e.g., PheedLoop, Salesforce, MyApp">
-      </div>
-
-      <div class="form-group">
-        <label>What does your app do? <span class="label-hint">(2-3 sentences)</span></label>
-        <textarea id="app-description" placeholder="e.g., PheedLoop is event management software that helps organizers create virtual and hybrid events. Users can manage speakers, sessions, attendees, and event settings."></textarea>
-      </div>
-
-      <div class="form-group">
-        <label>Who are your users? <span class="label-hint">(helps AI adjust language)</span></label>
-        <select id="user-type">
-          <option value="general">General users (non-technical)</option>
-          <option value="professional">Business professionals</option>
-          <option value="technical">Technical users / developers</option>
-          <option value="mixed">Mixed audience</option>
-        </select>
-      </div>
-
-      <div class="btn-group">
-        <button class="btn btn-primary" onclick="goToStep(2)">Continue</button>
-      </div>
+    <div class="process-step">
+      <div class="process-number">3</div>
+      <h3>You Go Live</h3>
+      <p>Add one line of code and your assistant is ready</p>
     </div>
   </div>
 
-  <!-- Step 2: Configure Pages & Elements -->
-  <div class="section" id="step2">
-    <div class="card">
-      <h2>Configure your pages & elements</h2>
-      <p>Choose how you want to set up the assistant's knowledge of your app.</p>
+  <!-- Main Form -->
+  <div class="card" id="form-card">
+    <h2>Tell us about your software</h2>
+    <p>The more context you provide, the better your AI assistant will understand your product.</p>
 
-      <div class="tabs">
-        <button class="tab active" data-tab="auto">Auto-Scan URL</button>
-        <button class="tab" data-tab="manual">Manual Setup</button>
-        <button class="tab" data-tab="paste">Paste HTML</button>
-      </div>
+    <form id="setup-form" action="https://formspree.io/f/mqakqvpz" method="POST" enctype="multipart/form-data">
 
-      <!-- Auto-Scan Tab -->
-      <div class="tab-content active" id="tab-auto">
-        <p>We'll scan your app and automatically detect pages and interactive elements.</p>
+      <!-- Basic Info -->
+      <div class="form-section">
+        <h3>📦 Basic Information</h3>
+        <p>What's your software called and what does it do?</p>
 
         <div class="form-group">
-          <label>Your App URL</label>
-          <input type="url" id="app-url" placeholder="https://app.yourcompany.com">
+          <label>Software Name <span class="required">*</span></label>
+          <input type="text" name="software_name" required placeholder="e.g., PheedLoop, Notion, Salesforce">
         </div>
-
-        <div id="scan-status"></div>
-
-        <button class="btn btn-primary" onclick="scanUrl()" id="scan-btn">Scan My App</button>
-      </div>
-
-      <!-- Manual Setup Tab -->
-      <div class="tab-content" id="tab-manual">
-        <p>Manually define the pages and elements in your app.</p>
-
-        <div id="pages-container">
-          <div class="page-entry" data-page="0">
-            <div class="page-entry-header">
-              <h4>Page 1</h4>
-              <button class="remove-btn" onclick="removePage(0)">×</button>
-            </div>
-            <div class="form-group">
-              <label>Page Name</label>
-              <input type="text" placeholder="e.g., settings, dashboard, profile">
-            </div>
-            <div class="form-group">
-              <label>Page Description</label>
-              <input type="text" placeholder="e.g., User account settings and preferences">
-            </div>
-            <div class="element-list">
-              <label>Interactive Elements</label>
-              <div class="elements-container">
-                <div class="element-entry">
-                  <input type="text" placeholder="CSS selector (#id, .class)">
-                  <input type="text" placeholder="Label (Dark Mode)">
-                  <select>
-                    <option value="checkbox">Toggle/Checkbox</option>
-                    <option value="button">Button</option>
-                    <option value="text">Text Input</option>
-                    <option value="select">Dropdown</option>
-                  </select>
-                  <button class="remove-btn" onclick="removeElement(this)">×</button>
-                </div>
-              </div>
-              <button class="add-btn" onclick="addElement(this)">+ Add Element</button>
-            </div>
-          </div>
-        </div>
-
-        <button class="add-btn" onclick="addPage()">+ Add Another Page</button>
-      </div>
-
-      <!-- Paste HTML Tab -->
-      <div class="tab-content" id="tab-paste">
-        <p>Paste your app's HTML and we'll analyze it automatically.</p>
 
         <div class="form-group">
-          <label>Paste HTML <span class="label-hint">(Open your app, right-click, View Source)</span></label>
-          <textarea id="html-paste" placeholder="<!DOCTYPE html>..." style="min-height: 200px; font-family: monospace; font-size: 0.875rem;"></textarea>
+          <label>Your Website/App URL <span class="required">*</span></label>
+          <input type="url" name="app_url" required placeholder="https://app.yourcompany.com">
         </div>
 
-        <div id="html-status"></div>
+        <div class="form-group">
+          <label>Brief Description <span class="required">*</span></label>
+          <textarea name="description" required placeholder="Describe what your software does in 2-3 sentences. What problems does it solve? Who uses it?"></textarea>
+        </div>
 
-        <button class="btn btn-primary" onclick="analyzeHtml()">Analyze HTML</button>
+        <div class="form-group">
+          <label>Who are your typical users?</label>
+          <select name="user_type">
+            <option value="non-technical">Non-technical users (general public)</option>
+            <option value="business">Business professionals</option>
+            <option value="technical">Technical users / developers</option>
+            <option value="mixed">Mixed audience</option>
+          </select>
+        </div>
       </div>
 
-      <div class="btn-group" style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
-        <button class="btn btn-secondary" onclick="goToStep(1)">Back</button>
-        <button class="btn btn-primary" onclick="generateConfig()">Generate Config</button>
+      <!-- Documentation Links -->
+      <div class="form-section">
+        <h3>📚 Documentation & Learning Materials</h3>
+        <p>Share links to your help docs, knowledge base, tutorials, or any learning resources. We'll analyze these to understand your software.</p>
+
+        <div class="form-group">
+          <label>Documentation Links <span class="label-hint">(help center, knowledge base, tutorials)</span></label>
+          <div class="links-container" id="links-container">
+            <div class="link-entry">
+              <input type="url" name="doc_links[]" placeholder="https://help.yourcompany.com">
+              <button type="button" class="remove-btn" onclick="removeLink(this)" style="display:none;">×</button>
+            </div>
+          </div>
+          <button type="button" class="add-link-btn" onclick="addLink()">+ Add another link</button>
+        </div>
+
+        <div class="form-group">
+          <label>Video Tutorials <span class="label-hint">(YouTube, Loom, etc.)</span></label>
+          <div class="links-container" id="video-links-container">
+            <div class="link-entry">
+              <input type="url" name="video_links[]" placeholder="https://youtube.com/watch?v=...">
+              <button type="button" class="remove-btn" onclick="removeLink(this)" style="display:none;">×</button>
+            </div>
+          </div>
+          <button type="button" class="add-link-btn" onclick="addVideoLink()">+ Add another video</button>
+        </div>
       </div>
-    </div>
+
+      <!-- File Upload -->
+      <div class="form-section">
+        <h3>📎 Upload Files <span class="label-hint">(Optional)</span></h3>
+        <p>Have PDFs, Word docs, or other training materials? Upload them here.</p>
+
+        <div class="file-upload" id="file-upload" onclick="document.getElementById('file-input').click();">
+          <div class="file-upload-icon">📄</div>
+          <p>Drag & drop files here, or <span>browse</span></p>
+          <p style="font-size: 0.75rem;">PDF, DOC, DOCX, TXT (Max 10MB each)</p>
+          <input type="file" id="file-input" name="files[]" multiple accept=".pdf,.doc,.docx,.txt" style="display:none;" onchange="handleFiles(this.files)">
+        </div>
+        <div class="file-list" id="file-list"></div>
+      </div>
+
+      <!-- Key Features -->
+      <div class="form-section">
+        <h3>⭐ Key Features to Highlight</h3>
+        <p>What are the main things users need help with? (Optional but helpful)</p>
+
+        <div class="form-group">
+          <label>Main features or pages <span class="label-hint">(list the most important ones)</span></label>
+          <textarea name="key_features" placeholder="e.g.,
+- Dashboard: where users see their overview
+- Settings: account preferences, notifications, integrations
+- Reports: generating and exporting data
+- User management: adding team members, permissions"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Common user questions/struggles <span class="label-hint">(what do support tickets usually ask?)</span></label>
+          <textarea name="common_questions" placeholder="e.g.,
+- How do I reset my password?
+- Where can I find my invoice?
+- How do I add a team member?
+- Why isn't my data syncing?"></textarea>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div class="form-section">
+        <h3>📧 Contact Information</h3>
+
+        <div class="form-group">
+          <label>Your Name <span class="required">*</span></label>
+          <input type="text" name="name" required placeholder="John Smith">
+        </div>
+
+        <div class="form-group">
+          <label>Work Email <span class="required">*</span></label>
+          <input type="email" name="email" required placeholder="john@company.com">
+        </div>
+
+        <div class="form-group">
+          <label>Company Name</label>
+          <input type="text" name="company" placeholder="Acme Inc.">
+        </div>
+      </div>
+
+      <!-- Pricing Note -->
+      <div class="pricing-note">
+        <h4>What's included in setup?</h4>
+        <p>We'll analyze your documentation, configure your AI assistant, test it thoroughly, and deliver a ready-to-use integration. Typical turnaround: 2-3 business days. Setup fee starts at $199 (one-time), then usage-based pricing.</p>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="btn btn-primary" id="submit-btn">Submit for Setup</button>
+
+      <!-- What happens next -->
+      <div class="next-steps">
+        <h4>📋 What happens next?</h4>
+        <ul>
+          <li>We review your submission within 24 hours</li>
+          <li>We analyze your docs and build your custom config</li>
+          <li>We send you a preview to test and approve</li>
+          <li>You get your integration code + go live</li>
+        </ul>
+      </div>
+    </form>
   </div>
 
-  <!-- Step 3: Integration -->
-  <div class="section" id="step3">
-    <div class="card">
-      <h2>Add to your website</h2>
-      <p>Copy this code and paste it before the closing <code>&lt;/body&gt;</code> tag in your HTML.</p>
-
-      <div class="form-group">
-        <label>Your API Key</label>
-        <div class="api-key-display">
-          <input type="text" id="api-key-display" value="inv_demo_12345" readonly>
-          <button class="btn btn-secondary" onclick="copyApiKey()" style="padding: 0.5rem 1rem;">Copy</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Integration Code</label>
-        <div class="code-block">
-          <button class="copy-btn" onclick="copyCode()">Copy</button>
-          <code id="integration-code">&lt;script
-  src="https://invocursor-production.up.railway.app/widget/cursorpilot.js"
-  data-api-key="inv_demo_12345"
-  data-config="your-app"&gt;
-&lt;/script&gt;</code>
-        </div>
-      </div>
-
-      <div class="feature-grid">
-        <div class="feature-item">
-          <h4>⚡ Do it for me</h4>
-          <p>Fast execution for power users</p>
-        </div>
-        <div class="feature-item">
-          <h4>📚 Teach me</h4>
-          <p>Step-by-step guided learning</p>
-        </div>
-        <div class="feature-item">
-          <h4>💬 Smart Chat</h4>
-          <p>Context-aware conversations</p>
-        </div>
-        <div class="feature-item">
-          <h4>🎯 Visual Cursor</h4>
-          <p>Shows users exactly where to click</p>
-        </div>
-      </div>
-
-      <div class="btn-group">
-        <button class="btn btn-secondary" onclick="goToStep(2)">Back</button>
-        <button class="btn btn-primary" onclick="goToStep(4)">I've Added the Code</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Step 4: Test -->
-  <div class="section" id="step4">
-    <div class="card">
-      <h2>You're all set!</h2>
-      <p>Your AI assistant is ready. Here's what your users can now do:</p>
-
-      <ul class="checklist">
-        <li>
-          <span class="check-icon">✓</span>
-          <div>
-            <strong>Ask questions about features</strong>
-            <p style="color: var(--text-muted); font-size: 0.875rem;">"What does dark mode do?" → Gets clear explanations</p>
-          </div>
-        </li>
-        <li>
-          <span class="check-icon">✓</span>
-          <div>
-            <strong>Get help finding things</strong>
-            <p style="color: var(--text-muted); font-size: 0.875rem;">"Where can I change my password?" → Visual guidance</p>
-          </div>
-        </li>
-        <li>
-          <span class="check-icon">✓</span>
-          <div>
-            <strong>Have tasks done for them</strong>
-            <p style="color: var(--text-muted); font-size: 0.875rem;">"Enable notifications" → AI does it automatically</p>
-          </div>
-        </li>
-        <li>
-          <span class="check-icon">✓</span>
-          <div>
-            <strong>Learn step-by-step</strong>
-            <p style="color: var(--text-muted); font-size: 0.875rem;">"Teach me how to add a speaker" → Guided walkthrough</p>
-          </div>
-        </li>
-      </ul>
-
-      <div class="card" style="background: var(--bg-dark); margin-top: 1.5rem;">
-        <h2>📊 Your Dashboard</h2>
-        <p>Track usage, update config, and manage your subscription:</p>
-        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-          <div style="flex: 1; text-align: center; padding: 1rem; background: var(--bg-card); border-radius: 8px;">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--accent);">0</div>
-            <div style="color: var(--text-muted); font-size: 0.875rem;">Conversations today</div>
-          </div>
-          <div style="flex: 1; text-align: center; padding: 1rem; background: var(--bg-card); border-radius: 8px;">
-            <div style="font-size: 2rem; font-weight: 700; color: var(--accent);">1,000</div>
-            <div style="color: var(--text-muted); font-size: 0.875rem;">Monthly limit</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="btn-group">
-        <button class="btn btn-secondary" onclick="goToStep(3)">Back</button>
-        <a href="/" class="btn btn-primary">Go to Homepage</a>
-      </div>
+  <!-- Success Message (hidden by default) -->
+  <div class="card" id="success-card" style="display: none;">
+    <div class="success-message">
+      <div class="success-icon">✓</div>
+      <h2>Submission Received!</h2>
+      <p>Thanks for submitting your information. We'll review your documentation and get back to you within 24 hours with next steps.</p>
+      <p style="color: var(--text);">Check your email at <strong id="submitted-email"></strong> for confirmation.</p>
+      <a href="/" class="btn btn-primary" style="display: inline-block; width: auto; margin-top: 1rem;">Back to Homepage</a>
     </div>
   </div>
 </div>
 
 <script>
-  let currentStep = 1;
-  let configData = null;
-  let pageCount = 1;
-
-  // Tab switching
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.onclick = () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-    };
-  });
-
-  function goToStep(step) {
-    // Validate current step
-    if (step > currentStep) {
-      if (currentStep === 1) {
-        const appName = document.getElementById('app-name').value.trim();
-        const appDesc = document.getElementById('app-description').value.trim();
-        if (!appName || !appDesc) {
-          alert('Please fill in the app name and description.');
-          return;
-        }
-      }
-    }
-
-    // Update progress
-    document.querySelectorAll('.step-item').forEach(item => {
-      const itemStep = parseInt(item.dataset.step);
-      item.classList.remove('active', 'completed');
-      if (itemStep < step) item.classList.add('completed');
-      if (itemStep === step) item.classList.add('active');
-    });
-
-    // Show section
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.getElementById('step' + step).classList.add('active');
-
-    currentStep = step;
-    window.scrollTo(0, 0);
-  }
-
-  async function scanUrl() {
-    const url = document.getElementById('app-url').value.trim();
-    if (!url) {
-      alert('Please enter a URL');
-      return;
-    }
-
-    const statusEl = document.getElementById('scan-status');
-    const btn = document.getElementById('scan-btn');
-
-    statusEl.innerHTML = '<div class="status loading">Scanning your app... This may take a moment.</div>';
-    btn.disabled = true;
-
-    try {
-      const appName = document.getElementById('app-name').value.trim();
-      const appDesc = document.getElementById('app-description').value.trim();
-
-      const resp = await fetch('/api/generate-config', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': 'local'
-        },
-        body: JSON.stringify({
-          url: url,
-          appName: appName,
-          appDescription: appDesc,
-          saveName: appName.toLowerCase().replace(/[^a-z0-9]/g, '-')
-        })
-      });
-
-      const data = await resp.json();
-
-      if (data.error) {
-        statusEl.innerHTML = `<div class="status error">Error: ${data.error}</div>`;
-      } else {
-        configData = data.config;
-        statusEl.innerHTML = `<div class="status success">Success! Found ${Object.keys(data.config.pages || {}).length} pages.</div>`;
-      }
-    } catch (e) {
-      statusEl.innerHTML = `<div class="status error">Error: ${e.message}</div>`;
-    }
-
-    btn.disabled = false;
-  }
-
-  async function analyzeHtml() {
-    const html = document.getElementById('html-paste').value.trim();
-    if (!html) {
-      alert('Please paste your HTML');
-      return;
-    }
-
-    const statusEl = document.getElementById('html-status');
-    statusEl.innerHTML = '<div class="status loading">Analyzing HTML...</div>';
-
-    try {
-      const appName = document.getElementById('app-name').value.trim();
-      const appDesc = document.getElementById('app-description').value.trim();
-
-      const resp = await fetch('/api/generate-config-from-html', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': 'local'
-        },
-        body: JSON.stringify({
-          html: html,
-          appName: appName,
-          appDescription: appDesc,
-          saveName: appName.toLowerCase().replace(/[^a-z0-9]/g, '-')
-        })
-      });
-
-      const data = await resp.json();
-
-      if (data.error) {
-        statusEl.innerHTML = `<div class="status error">Error: ${data.error}</div>`;
-      } else {
-        configData = data.config;
-        statusEl.innerHTML = `<div class="status success">Success! Found ${Object.keys(data.config.pages || {}).length} pages.</div>`;
-      }
-    } catch (e) {
-      statusEl.innerHTML = `<div class="status error">Error: ${e.message}</div>`;
-    }
-  }
-
-  function addPage() {
-    pageCount++;
-    const container = document.getElementById('pages-container');
-    const pageHtml = `
-      <div class="page-entry" data-page="${pageCount - 1}">
-        <div class="page-entry-header">
-          <h4>Page ${pageCount}</h4>
-          <button class="remove-btn" onclick="removePage(${pageCount - 1})">×</button>
-        </div>
-        <div class="form-group">
-          <label>Page Name</label>
-          <input type="text" placeholder="e.g., settings, dashboard, profile">
-        </div>
-        <div class="form-group">
-          <label>Page Description</label>
-          <input type="text" placeholder="e.g., User account settings and preferences">
-        </div>
-        <div class="element-list">
-          <label>Interactive Elements</label>
-          <div class="elements-container">
-            <div class="element-entry">
-              <input type="text" placeholder="CSS selector (#id, .class)">
-              <input type="text" placeholder="Label (Dark Mode)">
-              <select>
-                <option value="checkbox">Toggle/Checkbox</option>
-                <option value="button">Button</option>
-                <option value="text">Text Input</option>
-                <option value="select">Dropdown</option>
-              </select>
-              <button class="remove-btn" onclick="removeElement(this)">×</button>
-            </div>
-          </div>
-          <button class="add-btn" onclick="addElement(this)">+ Add Element</button>
-        </div>
-      </div>
+  // Add documentation link
+  function addLink() {
+    const container = document.getElementById('links-container');
+    const entry = document.createElement('div');
+    entry.className = 'link-entry';
+    entry.innerHTML = `
+      <input type="url" name="doc_links[]" placeholder="https://help.yourcompany.com">
+      <button type="button" class="remove-btn" onclick="removeLink(this)">×</button>
     `;
-    container.insertAdjacentHTML('beforeend', pageHtml);
+    container.appendChild(entry);
+    updateRemoveButtons('links-container');
   }
 
-  function removePage(index) {
-    const page = document.querySelector(`.page-entry[data-page="${index}"]`);
-    if (page) page.remove();
-  }
-
-  function addElement(btn) {
-    const container = btn.previousElementSibling;
-    const elementHtml = `
-      <div class="element-entry">
-        <input type="text" placeholder="CSS selector (#id, .class)">
-        <input type="text" placeholder="Label (Dark Mode)">
-        <select>
-          <option value="checkbox">Toggle/Checkbox</option>
-          <option value="button">Button</option>
-          <option value="text">Text Input</option>
-          <option value="select">Dropdown</option>
-        </select>
-        <button class="remove-btn" onclick="removeElement(this)">×</button>
-      </div>
+  // Add video link
+  function addVideoLink() {
+    const container = document.getElementById('video-links-container');
+    const entry = document.createElement('div');
+    entry.className = 'link-entry';
+    entry.innerHTML = `
+      <input type="url" name="video_links[]" placeholder="https://youtube.com/watch?v=...">
+      <button type="button" class="remove-btn" onclick="removeLink(this)">×</button>
     `;
-    container.insertAdjacentHTML('beforeend', elementHtml);
+    container.appendChild(entry);
+    updateRemoveButtons('video-links-container');
   }
 
-  function removeElement(btn) {
+  // Remove link
+  function removeLink(btn) {
     btn.parentElement.remove();
   }
 
-  function generateConfig() {
-    const appName = document.getElementById('app-name').value.trim();
-    const configName = appName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-
-    // Update integration code
-    const code = `<script
-  src="https://invocursor-production.up.railway.app/widget/cursorpilot.js"
-  data-api-key="inv_demo_12345"
-  data-config="${configName}">
-<\/script>`;
-
-    document.getElementById('integration-code').textContent = code;
-    goToStep(3);
+  // Update remove button visibility
+  function updateRemoveButtons(containerId) {
+    const container = document.getElementById(containerId);
+    const entries = container.querySelectorAll('.link-entry');
+    entries.forEach((entry, i) => {
+      const btn = entry.querySelector('.remove-btn');
+      btn.style.display = entries.length > 1 ? 'block' : 'none';
+    });
   }
 
-  function copyCode() {
-    const code = document.getElementById('integration-code').textContent;
-    navigator.clipboard.writeText(code);
-    event.target.textContent = 'Copied!';
-    setTimeout(() => event.target.textContent = 'Copy', 2000);
+  // File upload handling
+  const fileUpload = document.getElementById('file-upload');
+  const fileInput = document.getElementById('file-input');
+  const fileList = document.getElementById('file-list');
+  let uploadedFiles = [];
+
+  fileUpload.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    fileUpload.classList.add('dragover');
+  });
+
+  fileUpload.addEventListener('dragleave', () => {
+    fileUpload.classList.remove('dragover');
+  });
+
+  fileUpload.addEventListener('drop', (e) => {
+    e.preventDefault();
+    fileUpload.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  });
+
+  function handleFiles(files) {
+    for (let file of files) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`File ${file.name} is too large. Max 10MB.`);
+        continue;
+      }
+      uploadedFiles.push(file);
+      renderFileList();
+    }
   }
 
-  function copyApiKey() {
-    const key = document.getElementById('api-key-display').value;
-    navigator.clipboard.writeText(key);
+  function renderFileList() {
+    fileList.innerHTML = uploadedFiles.map((file, i) => `
+      <div class="file-item">
+        📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)
+        <button type="button" class="remove-file" onclick="removeFile(${i})">×</button>
+      </div>
+    `).join('');
   }
+
+  function removeFile(index) {
+    uploadedFiles.splice(index, 1);
+    renderFileList();
+  }
+
+  // Form submission
+  document.getElementById('setup-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    const formData = new FormData(this);
+
+    fetch(this.action, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    .then(response => {
+      if (response.ok) {
+        document.getElementById('form-card').style.display = 'none';
+        document.getElementById('success-card').style.display = 'block';
+        document.getElementById('submitted-email').textContent = formData.get('email');
+      } else {
+        throw new Error('Submission failed');
+      }
+    })
+    .catch(error => {
+      alert('Something went wrong. Please try again or email us directly.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit for Setup';
+    });
+  });
 </script>
 
 </body>
