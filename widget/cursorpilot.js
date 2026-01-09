@@ -319,7 +319,7 @@
     }
 
     .cp-tip::before {
-      content: "💡 ";
+      content: "› ";
     }
 
     /* Continue Button */
@@ -415,13 +415,13 @@
         <div id="cp-header-top">
           <h3>Invocursor</h3>
           <div id="cp-header-btns">
-            <button id="cp-clear" title="Clear chat">🗑</button>
+            <button id="cp-clear" title="Clear chat">○</button>
             <button id="cp-close">×</button>
           </div>
         </div>
         <div id="cp-mode-toggle">
-          <button class="cp-mode-btn" data-mode="fast">⚡ Do it for me</button>
-          <button class="cp-mode-btn" data-mode="guided">📚 Teach me</button>
+          <button class="cp-mode-btn" data-mode="fast">→ Do it for me</button>
+          <button class="cp-mode-btn" data-mode="guided">≡ Teach me</button>
         </div>
       </div>
       <div id="cp-log"></div>
@@ -851,7 +851,7 @@
 
       switch (responseType) {
         case 'question':
-          log('🤔 ' + responseMessage, 'cp-question');
+          log('? ' + responseMessage, 'cp-question');
           break;
 
         case 'explanation':
@@ -859,7 +859,7 @@
           break;
 
         case 'status':
-          log('📊 ' + responseMessage, 'cp-status');
+          log('› ' + responseMessage, 'cp-status');
           break;
 
         case 'action':
