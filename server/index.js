@@ -251,8 +251,8 @@ User wants: "${goal}"
 Output the JSON plan:`;
 }
 
-// Smart conversation system prompt - Learning & Support focused
-function buildSmartSystemPrompt(config) {
+// Smart conversation system prompt - Mode-aware (fast vs guided)
+function buildSmartSystemPrompt(config, mode = 'fast') {
   let pagesSummary = '';
   for (const [pageName, pageData] of Object.entries(config.pages)) {
     const elements = Object.keys(pageData.elements).join(', ');
@@ -271,61 +271,110 @@ function buildSmartSystemPrompt(config) {
     }
   }
 
-  return `You are a friendly learning assistant and support guide for ${config.app.name}.
+  const baseInfo = `You are a friendly assistant for ${config.app.name}.
 ${config.app.description}
-
-Your role is to help users LEARN and UNDERSTAND this software, not just do things for them.
 
 PAGES:
 ${pagesSummary}
 ALL ELEMENTS:
-${elementsDetail}
+${elementsDetail}`;
 
-Your primary goals:
-1. TEACH users how to use features - explain what things do and why
-2. GUIDE users through processes step-by-step
-3. TROUBLESHOOT issues - help diagnose and fix problems
-4. SUPPORT users with patience and encouragement
-5. PERFORM actions when users prefer you to do it for them
+  if (mode === 'guided') {
+    // TEACH ME MODE - Detailed explanations, step-by-step learning
+    return `${baseInfo}
+
+MODE: TEACH ME (Guided Learning)
+The user wants to LEARN, not just get things done. Your job is to teach them.
 
 ALWAYS respond with valid JSON in this format:
 {
   "type": "response_type",
   "message": "Your message to the user",
-  "plan": [...] // optional, only if performing actions
+  "plan": [...],
+  "explanations": ["Explanation for step 1", "Explanation for step 2", ...]
+}
+
+CRITICAL FOR GUIDED MODE:
+- When type is "action", you MUST include an "explanations" array
+- Each step in "plan" should have a corresponding explanation in "explanations"
+- Explanations should teach WHY this step matters, not just WHAT it does
+- Use simple, encouraging language
+
+Response types:
+- "question": Ask clarifying questions to understand their goal
+- "explanation": Teach about a feature (no action needed)
+- "action": Perform steps WITH detailed explanations for each step
+- "status": Report current state
+- "error": Can't help
+
+For actions, include BOTH plan and explanations:
+{
+  "type": "action",
+  "message": "Great! Let me show you how to do this step by step.",
+  "plan": [
+    {"type":"navigate","target":"settings"},
+    {"type":"toggle","target":"#dark-mode","value":true}
+  ],
+  "explanations": [
+    "First, we need to go to the Settings page. This is where you'll find all the customization options for your account.",
+    "Now we'll enable Dark Mode. This changes the color scheme to darker colors, which is easier on your eyes, especially at night. You can always toggle this back if you prefer the light theme."
+  ]
+}
+
+TEACHING STYLE:
+- Celebrate their questions: "Great question!"
+- Explain the WHY: "This helps because..."
+- Give context: "You'll find this useful when..."
+- Encourage independence: "Next time, you can find this in..."
+- Offer tips: "Pro tip: You can also..."
+
+Always navigate to the correct page FIRST before other actions.`;
+
+  } else {
+    // DO IT FOR ME MODE - Quick, efficient execution
+    return `${baseInfo}
+
+MODE: DO IT FOR ME (Fast Execution)
+The user wants you to complete tasks quickly. Be efficient.
+
+ALWAYS respond with valid JSON in this format:
+{
+  "type": "response_type",
+  "message": "Brief message",
+  "plan": [...]
 }
 
 Response types:
-- "question": When you need more info OR want to understand what the user is trying to achieve
-- "explanation": When teaching about a feature or explaining how something works
-- "action": When performing actions for the user (include "plan" array)
-- "status": When reporting current state of settings or diagnosing issues
-- "error": When you can't help with the request
+- "question": Only if absolutely necessary for clarification
+- "explanation": Brief explanation if they ask about something
+- "action": Perform the task (include "plan" array)
+- "status": Quick status report
+- "error": Can't help
 
-For actions, the plan array uses these step types:
+For actions:
+{
+  "type": "action",
+  "message": "Done! I've enabled dark mode for you.",
+  "plan": [
+    {"type":"navigate","target":"settings"},
+    {"type":"toggle","target":"#dark-mode","value":true}
+  ]
+}
+
+FAST MODE STYLE:
+- Be concise - users want speed
+- Skip lengthy explanations unless asked
+- Just get it done
+- Brief confirmation when complete
+
+Plan step types:
 - {"type":"navigate","target":"page-name"}
 - {"type":"toggle","target":"#element-id","value":true/false}
 - {"type":"type","target":"#element-id","value":"text"}
 - {"type":"click","target":"#element-id"}
 
-COMMUNICATION STYLE:
-- Be warm, patient, and encouraging - users are learning!
-- Explain the "why" not just the "what" - help them understand
-- When doing actions, explain what you're doing and why it helps
-- If user seems confused, offer to explain more or show them step-by-step
-- Use simple language, avoid jargon
-- Celebrate small wins - "Great question!" or "You've got it!"
-- Offer helpful tips: "Pro tip: You can also..."
-- If something goes wrong, reassure them and help troubleshoot
-
-TROUBLESHOOTING APPROACH:
-- First understand what they're trying to accomplish
-- Check current state to diagnose the issue
-- Explain what might be wrong in simple terms
-- Offer to fix it OR guide them through fixing it
-- Suggest how to avoid similar issues in future
-
-Always navigate to the correct page FIRST before performing actions.`;
+Always navigate to the correct page FIRST before other actions.`;
+  }
 }
 
 // ============================================
@@ -458,9 +507,10 @@ app.get('/api/stats', authMiddleware, (req, res) => {
 
 app.post('/api/chat', authMiddleware, async (req, res) => {
   const startTime = Date.now();
-  const { message, currentPage, currentState, history, configName = 'pheedloop' } = req.body;
+  const { message, currentPage, currentState, history, configName = 'pheedloop', mode = 'fast' } = req.body;
 
   console.log('\n=== SMART CHAT ===');
+  console.log('Mode:', mode);
   console.log('Message:', message);
   console.log('Page:', currentPage);
   console.log('State:', JSON.stringify(currentState || {}).substring(0, 200));
@@ -471,7 +521,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   }
 
   try {
-    const systemPrompt = buildSmartSystemPrompt(config);
+    const systemPrompt = buildSmartSystemPrompt(config, mode);
 
     // Build context message with current state
     let userMessage = `Current page: "${currentPage}"\n`;
@@ -756,6 +806,15 @@ app.get('/admin/keys', (req, res) => {
 // Landing page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../landing.html'));
+});
+
+// Onboarding / Setup page
+app.get('/setup', (req, res) => {
+  res.sendFile(path.join(__dirname, '../onboarding.html'));
+});
+
+app.get('/onboarding', (req, res) => {
+  res.sendFile(path.join(__dirname, '../onboarding.html'));
 });
 
 // Demo page

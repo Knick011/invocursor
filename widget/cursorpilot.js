@@ -1,71 +1,71 @@
 /**
- * Invocursor Widget v3.0
- * Sophisticated AI assistant with context awareness
- * Features: Chat history, state reading, clarifying questions
+ * Invocursor Widget v3.1
+ * AI Learning & Support Assistant with Mode Toggle
+ * Features: "Do it for me" (fast) vs "Teach me" (guided) modes
  */
 (function() {
-  // Configuration - can be overridden via data attributes
   const SCRIPT = document.currentScript;
-  // Auto-detect API URL: use data-api if provided, otherwise use same origin
   const API_URL = SCRIPT?.dataset?.api || window.location.origin;
   const CONFIG_NAME = SCRIPT?.dataset?.config || 'pheedloop';
   const API_KEY = SCRIPT?.dataset?.apiKey || 'local';
   const STORAGE_KEY = 'invocursor_history_' + CONFIG_NAME;
+  const MODE_KEY = 'invocursor_mode';
 
-  // Animation settings (adjustable)
-  const CURSOR_SPEED = 800;      // ms to move cursor
-  const CLICK_DELAY = 300;       // ms pause after click
-  const TYPE_SPEED = 50;         // ms per character
-  const STEP_PAUSE = 500;        // ms between steps
+  // Animation settings
+  const CURSOR_SPEED = 800;
+  const CLICK_DELAY = 300;
+  const TYPE_SPEED = 50;
+  const STEP_PAUSE_FAST = 400;
+  const STEP_PAUSE_GUIDED = 1500;
 
-  // Chat history (persisted in localStorage)
+  // State
   let chatHistory = [];
+  let currentMode = localStorage.getItem(MODE_KEY) || 'fast'; // 'fast' or 'guided'
+  let waitingForContinue = false;
+  let pendingSteps = [];
+  let currentStepIndex = 0;
 
-  // Load chat history from localStorage
+  // Load/save history
   function loadHistory() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         chatHistory = JSON.parse(saved);
-        // Keep only last 20 messages
-        if (chatHistory.length > 20) {
-          chatHistory = chatHistory.slice(-20);
-        }
+        if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
       }
-    } catch (e) {
-      chatHistory = [];
-    }
+    } catch (e) { chatHistory = []; }
   }
 
-  // Save chat history to localStorage
   function saveHistory() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory.slice(-20)));
-    } catch (e) {
-      // localStorage might be full or disabled
-    }
+    } catch (e) {}
   }
 
-  // Add message to history
   function addToHistory(role, content) {
     chatHistory.push({ role, content, timestamp: Date.now() });
     saveHistory();
   }
 
-  // Clear chat history
   function clearHistory() {
     chatHistory = [];
     localStorage.removeItem(STORAGE_KEY);
   }
 
-  // Inject styles
+  function setMode(mode) {
+    currentMode = mode;
+    localStorage.setItem(MODE_KEY, mode);
+    updateModeUI();
+  }
+
+  // Styles
   const style = document.createElement('style');
   style.textContent = `
     #cp-widget {
       position: fixed;
       bottom: 16px;
       right: 8px;
-      width: 380px;
+      width: 400px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       z-index: 99999;
     }
@@ -107,10 +107,14 @@
     #cp-header {
       background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
       color: #fff;
-      padding: 16px;
+      padding: 12px 16px;
+    }
+
+    #cp-header-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 10px;
     }
 
     #cp-header h3 {
@@ -142,8 +146,40 @@
       background: rgba(255,255,255,0.3);
     }
 
+    /* Mode Toggle */
+    #cp-mode-toggle {
+      display: flex;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .cp-mode-btn {
+      flex: 1;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .cp-mode-btn.active {
+      background: #fff;
+      color: #ea580c;
+    }
+
+    .cp-mode-btn:not(.active):hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+
     #cp-log {
-      height: 320px;
+      height: 300px;
       overflow-y: auto;
       padding: 12px;
       background: #f8fafc;
@@ -170,6 +206,10 @@
       border-color: #f59e0b;
     }
 
+    #cp-input:disabled {
+      background: #f1f5f9;
+    }
+
     #cp-send {
       padding: 12px 20px;
       background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
@@ -186,6 +226,7 @@
       cursor: not-allowed;
     }
 
+    /* Messages */
     .cp-msg {
       margin: 8px 0;
       padding: 10px 12px;
@@ -245,6 +286,11 @@
       border-left-color: #ef4444;
     }
 
+    .cp-step.waiting {
+      background: #fef3c7;
+      border-left-color: #f59e0b;
+    }
+
     .cp-done {
       background: #dcfce7;
       border: 1px solid #86efac;
@@ -265,7 +311,57 @@
       font-style: italic;
     }
 
-    /* Cursor styles - improved */
+    .cp-tip {
+      background: #fdf4ff;
+      border: 1px solid #e879f9;
+      margin-right: 40px;
+      font-size: 12px;
+    }
+
+    .cp-tip::before {
+      content: "💡 ";
+    }
+
+    /* Continue Button */
+    #cp-continue-wrap {
+      padding: 8px 12px;
+      border-top: 1px solid #e2e8f0;
+      display: none;
+      gap: 8px;
+    }
+
+    #cp-continue-wrap.visible {
+      display: flex;
+    }
+
+    #cp-continue {
+      flex: 1;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    #cp-continue:hover {
+      opacity: 0.9;
+    }
+
+    #cp-skip-all {
+      padding: 10px 16px;
+      background: #f1f5f9;
+      color: #64748b;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    /* Cursor styles */
     #cp-cursor {
       position: fixed;
       width: 24px;
@@ -281,7 +377,6 @@
       opacity: 1;
     }
 
-    /* Click ripple effect */
     #cp-click-ripple {
       position: fixed;
       width: 40px;
@@ -303,7 +398,6 @@
       100% { transform: scale(2); opacity: 0; }
     }
 
-    /* Highlight effect for target element */
     .cp-highlight {
       outline: 3px solid #f59e0b !important;
       outline-offset: 2px;
@@ -312,19 +406,29 @@
   `;
   document.head.appendChild(style);
 
-  // Create widget HTML
+  // Widget HTML
   const widget = document.createElement('div');
   widget.id = 'cp-widget';
   widget.innerHTML = `
     <div id="cp-panel">
       <div id="cp-header">
-        <h3>Invocursor</h3>
-        <div id="cp-header-btns">
-          <button id="cp-clear" title="Clear chat">🗑</button>
-          <button id="cp-close">×</button>
+        <div id="cp-header-top">
+          <h3>Invocursor</h3>
+          <div id="cp-header-btns">
+            <button id="cp-clear" title="Clear chat">🗑</button>
+            <button id="cp-close">×</button>
+          </div>
+        </div>
+        <div id="cp-mode-toggle">
+          <button class="cp-mode-btn" data-mode="fast">⚡ Do it for me</button>
+          <button class="cp-mode-btn" data-mode="guided">📚 Teach me</button>
         </div>
       </div>
       <div id="cp-log"></div>
+      <div id="cp-continue-wrap">
+        <button id="cp-continue">Continue to next step →</button>
+        <button id="cp-skip-all">Do the rest</button>
+      </div>
       <div id="cp-input-wrap">
         <input id="cp-input" placeholder="What would you like to do?" />
         <button id="cp-send">Go</button>
@@ -336,7 +440,7 @@
   `;
   document.body.appendChild(widget);
 
-  // Create cursor with better design
+  // Cursor element
   const cursor = document.createElement('div');
   cursor.id = 'cp-cursor';
   cursor.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24">
@@ -344,12 +448,12 @@
   </svg>`;
   document.body.appendChild(cursor);
 
-  // Create click ripple element
+  // Click ripple
   const ripple = document.createElement('div');
   ripple.id = 'cp-click-ripple';
   document.body.appendChild(ripple);
 
-  // Current cursor position
+  // Cursor position
   let cursorX = window.innerWidth - 100;
   let cursorY = window.innerHeight - 100;
   cursor.style.left = cursorX + 'px';
@@ -361,11 +465,21 @@
   const logEl = document.getElementById('cp-log');
   const input = document.getElementById('cp-input');
   const sendBtn = document.getElementById('cp-send');
+  const continueWrap = document.getElementById('cp-continue-wrap');
+  const continueBtn = document.getElementById('cp-continue');
+  const skipAllBtn = document.getElementById('cp-skip-all');
 
-  // Load saved history
+  // Initialize
   loadHistory();
+  updateModeUI();
 
-  // Toggle panel
+  function updateModeUI() {
+    document.querySelectorAll('.cp-mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === currentMode);
+    });
+  }
+
+  // Event handlers
   toggle.onclick = () => {
     panel.style.display = 'block';
     toggle.style.display = 'none';
@@ -382,6 +496,13 @@
     logEl.innerHTML = '';
     log('Chat cleared. How can I help you?', 'cp-assistant');
   };
+
+  document.querySelectorAll('.cp-mode-btn').forEach(btn => {
+    btn.onclick = () => setMode(btn.dataset.mode);
+  });
+
+  continueBtn.onclick = () => continueGuidedExecution();
+  skipAllBtn.onclick = () => skipToEnd();
 
   // Helpers
   function log(html, cls) {
@@ -404,24 +525,17 @@
     return path || 'home';
   }
 
-  // Read current state of all toggle elements and inputs
   function getCurrentState() {
     const state = {};
-
-    // Find all checkboxes/toggles
     document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(el => {
       const id = el.id || el.name;
       if (id) {
-        // Try to get a human-readable label
         const label = el.closest('label')?.textContent?.trim() ||
                      document.querySelector(`label[for="${el.id}"]`)?.textContent?.trim() ||
-                     el.dataset?.label ||
-                     id;
+                     el.dataset?.label || id;
         state[label] = el.checked ? 'ON' : 'OFF';
       }
     });
-
-    // Find select dropdowns
     document.querySelectorAll('select').forEach(el => {
       const id = el.id || el.name;
       if (id) {
@@ -430,8 +544,6 @@
         state[label] = selectedOption?.text || el.value;
       }
     });
-
-    // Find text inputs with values
     document.querySelectorAll('input[type="text"], input[type="email"], input[type="number"], textarea').forEach(el => {
       const id = el.id || el.name;
       if (id && el.value) {
@@ -439,11 +551,10 @@
         state[label] = el.value;
       }
     });
-
     return state;
   }
 
-  // Smooth cursor animation using requestAnimationFrame
+  // Cursor animation
   function animateCursor(targetX, targetY, duration) {
     return new Promise(resolve => {
       const startX = cursorX;
@@ -453,8 +564,6 @@
       function animate(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-
-        // Easing function (ease-out cubic)
         const eased = 1 - Math.pow(1 - progress, 3);
 
         cursorX = startX + (targetX - startX) * eased;
@@ -469,51 +578,40 @@
           resolve();
         }
       }
-
       requestAnimationFrame(animate);
     });
   }
 
-  // Show click effect
   async function showClick(x, y) {
     ripple.style.left = (x - 20) + 'px';
     ripple.style.top = (y - 20) + 'px';
     ripple.classList.remove('animate');
-    void ripple.offsetWidth; // Force reflow
+    void ripple.offsetWidth;
     ripple.classList.add('animate');
     await sleep(CLICK_DELAY);
   }
 
-  // Move cursor to element with smooth animation
   async function moveCursor(el) {
     const rect = el.getBoundingClientRect();
     const targetX = rect.left + rect.width / 2 - 12;
     const targetY = rect.top + rect.height / 2 - 12;
 
-    // Show cursor
     cursor.classList.add('visible');
-
-    // Animate to target
     await animateCursor(targetX, targetY, CURSOR_SPEED);
-
-    // Highlight element
     el.classList.add('cp-highlight');
     await sleep(200);
   }
 
   function hideCursor() {
     cursor.classList.remove('visible');
-    // Remove all highlights
     document.querySelectorAll('.cp-highlight').forEach(el => {
       el.classList.remove('cp-highlight');
     });
   }
 
-  // Type text character by character
   async function typeText(el, text) {
     el.focus();
     el.value = '';
-
     for (let i = 0; i < text.length; i++) {
       el.value += text[i];
       el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -521,9 +619,8 @@
     }
   }
 
-  // Execute a single step
+  // Execute single step
   async function executeStep(step) {
-    // Navigate
     if (step.type === 'navigate') {
       const tab = document.querySelector(`[data-page="${step.target}"]`);
       if (!tab) return { success: false, reason: 'Page not found' };
@@ -531,51 +628,46 @@
       await moveCursor(tab);
       await showClick(cursorX + 12, cursorY + 12);
       tab.click();
-      await sleep(STEP_PAUSE);
+      await sleep(currentMode === 'fast' ? STEP_PAUSE_FAST : STEP_PAUSE_GUIDED);
       hideCursor();
       return { success: true };
     }
 
-    // Find element
     const el = document.querySelector(step.target);
     if (!el) return { success: false, reason: 'Element not found' };
 
     await moveCursor(el);
 
-    // Toggle
     if (step.type === 'toggle') {
       const want = step.value === true || step.value === 'true';
       await showClick(cursorX + 12, cursorY + 12);
       if (el.checked !== want) el.click();
-      await sleep(STEP_PAUSE);
+      await sleep(currentMode === 'fast' ? STEP_PAUSE_FAST : STEP_PAUSE_GUIDED);
       hideCursor();
       return { success: el.checked === want };
     }
 
-    // Type
     if (step.type === 'type') {
       await showClick(cursorX + 12, cursorY + 12);
       await typeText(el, step.value || '');
-      await sleep(STEP_PAUSE);
+      await sleep(currentMode === 'fast' ? STEP_PAUSE_FAST : STEP_PAUSE_GUIDED);
       hideCursor();
       return { success: true };
     }
 
-    // Click
     if (step.type === 'click') {
       await showClick(cursorX + 12, cursorY + 12);
       el.click();
-      await sleep(STEP_PAUSE);
+      await sleep(currentMode === 'fast' ? STEP_PAUSE_FAST : STEP_PAUSE_GUIDED);
       hideCursor();
       return { success: true };
     }
 
-    // Select (dropdown)
     if (step.type === 'select') {
       await showClick(cursorX + 12, cursorY + 12);
       el.value = step.value;
       el.dispatchEvent(new Event('change', { bubbles: true }));
-      await sleep(STEP_PAUSE);
+      await sleep(currentMode === 'fast' ? STEP_PAUSE_FAST : STEP_PAUSE_GUIDED);
       hideCursor();
       return { success: true };
     }
@@ -592,9 +684,9 @@
     return JSON.stringify(step);
   }
 
-  // Execute a plan (array of steps)
-  async function executePlan(plan) {
-    // Show plan
+  // Execute plan - handles both modes
+  async function executePlan(plan, explanations = []) {
+    // Show plan overview
     let planHtml = '<b>Plan:</b><br>';
     plan.forEach((step, i) => {
       planHtml += `${i+1}. ${describeStep(step)}<br>`;
@@ -603,38 +695,127 @@
 
     await sleep(600);
 
-    // Execute steps
-    for (let i = 0; i < plan.length; i++) {
-      const step = plan[i];
-      const stepDiv = log(`▶ Step ${i+1}: ${describeStep(step)}`, 'cp-step');
+    if (currentMode === 'fast') {
+      // Fast mode: execute all steps quickly
+      for (let i = 0; i < plan.length; i++) {
+        const step = plan[i];
+        const stepDiv = log(`▶ Step ${i+1}: ${describeStep(step)}`, 'cp-step');
 
-      await sleep(300);
-      const result = await executeStep(step);
+        await sleep(200);
+        const result = await executeStep(step);
 
-      if (result.success) {
-        stepDiv.className = 'cp-msg cp-step done';
-        stepDiv.innerHTML = `✓ Step ${i+1}: ${describeStep(step)}`;
-      } else {
-        stepDiv.className = 'cp-msg cp-step fail';
-        stepDiv.innerHTML = `✗ Step ${i+1}: ${describeStep(step)} (${result.reason || 'failed'})`;
+        if (result.success) {
+          stepDiv.className = 'cp-msg cp-step done';
+          stepDiv.innerHTML = `✓ Step ${i+1}: ${describeStep(step)}`;
+        } else {
+          stepDiv.className = 'cp-msg cp-step fail';
+          stepDiv.innerHTML = `✗ Step ${i+1}: ${describeStep(step)} (${result.reason || 'failed'})`;
+        }
+
+        await sleep(300);
       }
-
-      await sleep(400);
+      log('Done!', 'cp-done');
+    } else {
+      // Guided mode: step by step with explanations
+      pendingSteps = plan.map((step, i) => ({
+        step,
+        explanation: explanations[i] || null
+      }));
+      currentStepIndex = 0;
+      await executeGuidedStep();
     }
-
-    log('Done!', 'cp-done');
   }
 
-  // Main chat function - uses smart /api/chat endpoint
+  async function executeGuidedStep() {
+    if (currentStepIndex >= pendingSteps.length) {
+      continueWrap.classList.remove('visible');
+      input.disabled = false;
+      sendBtn.disabled = false;
+      log('All done! You\'ve completed all the steps.', 'cp-done');
+      log('Pro tip: Try doing this yourself next time - you\'ve got this!', 'cp-tip');
+      return;
+    }
+
+    const { step, explanation } = pendingSteps[currentStepIndex];
+
+    // Show explanation if in guided mode
+    if (explanation) {
+      log(explanation, 'cp-explanation');
+      await sleep(500);
+    }
+
+    const stepDiv = log(`▶ Step ${currentStepIndex + 1}: ${describeStep(step)}`, 'cp-step waiting');
+
+    await sleep(300);
+    const result = await executeStep(step);
+
+    if (result.success) {
+      stepDiv.className = 'cp-msg cp-step done';
+      stepDiv.innerHTML = `✓ Step ${currentStepIndex + 1}: ${describeStep(step)}`;
+    } else {
+      stepDiv.className = 'cp-msg cp-step fail';
+      stepDiv.innerHTML = `✗ Step ${currentStepIndex + 1}: ${describeStep(step)} (${result.reason || 'failed'})`;
+    }
+
+    currentStepIndex++;
+
+    if (currentStepIndex < pendingSteps.length) {
+      // Show continue button
+      continueWrap.classList.add('visible');
+      waitingForContinue = true;
+    } else {
+      continueWrap.classList.remove('visible');
+      input.disabled = false;
+      sendBtn.disabled = false;
+      log('All done! Great job following along.', 'cp-done');
+      log('Pro tip: Try doing this yourself next time - you\'ve got this!', 'cp-tip');
+    }
+  }
+
+  function continueGuidedExecution() {
+    waitingForContinue = false;
+    continueWrap.classList.remove('visible');
+    executeGuidedStep();
+  }
+
+  function skipToEnd() {
+    // Switch to fast mode for remaining steps
+    waitingForContinue = false;
+    continueWrap.classList.remove('visible');
+
+    // Execute remaining steps quickly
+    (async () => {
+      for (let i = currentStepIndex; i < pendingSteps.length; i++) {
+        const { step } = pendingSteps[i];
+        const stepDiv = log(`▶ Step ${i + 1}: ${describeStep(step)}`, 'cp-step');
+
+        await sleep(200);
+        const result = await executeStep(step);
+
+        if (result.success) {
+          stepDiv.className = 'cp-msg cp-step done';
+          stepDiv.innerHTML = `✓ Step ${i + 1}: ${describeStep(step)}`;
+        } else {
+          stepDiv.className = 'cp-msg cp-step fail';
+          stepDiv.innerHTML = `✗ Step ${i + 1}: ${describeStep(step)} (${result.reason || 'failed'})`;
+        }
+
+        await sleep(300);
+      }
+
+      input.disabled = false;
+      sendBtn.disabled = false;
+      log('Done!', 'cp-done');
+    })();
+  }
+
+  // Main chat function
   async function chat(message) {
-    // Show user message
     log(message, 'cp-user');
     addToHistory('user', message);
 
-    // Show thinking indicator
     const thinkingDiv = log('Thinking...', 'cp-thinking');
 
-    // Get current page and state
     const currentPage = getCurrentPage();
     const currentState = getCurrentState();
 
@@ -649,14 +830,13 @@
           message,
           currentPage,
           currentState,
-          history: chatHistory.slice(-6), // Send last 6 messages for context
-          configName: CONFIG_NAME
+          history: chatHistory.slice(-6),
+          configName: CONFIG_NAME,
+          mode: currentMode
         })
       });
 
       const data = await resp.json();
-
-      // Remove thinking indicator
       thinkingDiv.remove();
 
       if (data.error) {
@@ -664,14 +844,11 @@
         return;
       }
 
-      // Handle different response types
       const responseType = data.type || 'explanation';
       const responseMessage = data.message || 'I understood your request.';
 
-      // Add AI response to history
       addToHistory('assistant', responseMessage);
 
-      // Display based on type
       switch (responseType) {
         case 'question':
           log('🤔 ' + responseMessage, 'cp-question');
@@ -688,7 +865,7 @@
         case 'action':
           log(responseMessage, 'cp-assistant');
           if (data.plan && data.plan.length > 0) {
-            await executePlan(data.plan);
+            await executePlan(data.plan, data.explanations || []);
           }
           break;
 
@@ -709,7 +886,7 @@
   // Send handler
   async function send() {
     const message = input.value.trim();
-    if (!message) return;
+    if (!message || waitingForContinue) return;
 
     input.value = '';
     input.disabled = true;
@@ -717,14 +894,19 @@
 
     await chat(message);
 
-    input.disabled = false;
-    sendBtn.disabled = false;
-    input.focus();
+    if (!waitingForContinue) {
+      input.disabled = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
   }
 
   sendBtn.onclick = send;
   input.onkeydown = e => { if (e.key === 'Enter') send(); };
 
-  // Ready - show welcome message
-  log('Hi! I\'m here to help you learn and use this application. Ask me anything - whether you need help finding a feature, understanding how something works, or troubleshooting an issue.', 'cp-assistant');
+  // Welcome message
+  const modeDesc = currentMode === 'fast'
+    ? 'I\'ll complete tasks quickly for you.'
+    : 'I\'ll guide you step-by-step so you learn.';
+  log(`Hi! I'm here to help. ${modeDesc} Use the toggle above to switch modes anytime.`, 'cp-assistant');
 })();
