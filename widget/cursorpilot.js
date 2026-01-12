@@ -63,8 +63,8 @@
   style.textContent = `
     #cp-widget {
       position: fixed;
-      bottom: 16px;
-      right: 8px;
+      bottom: 20px;
+      right: 20px;
       width: 400px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       z-index: 99999;
