@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
+const ExcelJS = require('exceljs');
 
 const app = express();
 const PORT = process.env.PORT || 3050;
@@ -9,6 +11,14 @@ const PORT = process.env.PORT || 3050;
 // OpenAI Configuration
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'YOUR_API_KEY_HERE';
 const OPENAI_MODEL = 'gpt-4o-mini';  // Cheapest smart model
+
+// Supabase Configuration (for chat history storage)
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+const supabase = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+// Pending analytics requests (for password verification flow)
+const pendingAnalyticsRequests = new Map();
 
 // Data directories
 const DATA_DIR = path.join(__dirname, '../data');
@@ -193,6 +203,228 @@ function logRequest(apiKey, goal, configName, success, responseTime) {
   } catch (e) {
     console.error('Log error:', e.message);
   }
+}
+
+// ============================================
+// CHAT HISTORY LOGGING (Supabase)
+// ============================================
+
+async function logChatToSupabase(apiKey, userMessage, aiResponse, responseType, mode, currentPage, configName) {
+  if (!supabase) {
+    console.log('Supabase not configured - chat not logged');
+    return;
+  }
+
+  try {
+    const { error } = await supabase.from('chat_logs').insert({
+      api_key: apiKey,
+      user_message: userMessage,
+      ai_response: aiResponse,
+      response_type: responseType,
+      mode: mode,
+      current_page: currentPage,
+      config_name: configName,
+      created_at: new Date().toISOString()
+    });
+
+    if (error) {
+      console.error('Supabase log error:', error.message);
+    }
+  } catch (e) {
+    console.error('Chat logging error:', e.message);
+  }
+}
+
+// ============================================
+// ANALYTICS TRIGGER DETECTION
+// ============================================
+
+const ANALYTICS_TRIGGERS = [
+  'show analytics',
+  'display analytics',
+  'show history',
+  'display history',
+  'download analytics',
+  'download history',
+  'export data',
+  'export analytics',
+  'get my data',
+  'get analytics',
+  'get my analytics',
+  'show my data',
+  'analytics report',
+  'chat history',
+  'show chat history',
+  'download chat history'
+];
+
+function isAnalyticsTrigger(message) {
+  const lowerMessage = message.toLowerCase().trim();
+  return ANALYTICS_TRIGGERS.some(trigger => lowerMessage.includes(trigger));
+}
+
+// ============================================
+// EXCEL GENERATION
+// ============================================
+
+async function generateAnalyticsExcel(apiKey, keyData) {
+  if (!supabase) {
+    throw new Error('Analytics not available - database not configured');
+  }
+
+  // Fetch all chat logs for this API key
+  const { data: chatLogs, error } = await supabase
+    .from('chat_logs')
+    .select('*')
+    .eq('api_key', apiKey)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error('Failed to fetch chat history: ' + error.message);
+  }
+
+  // Create workbook
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Invocursor';
+  workbook.created = new Date();
+
+  // ===== SHEET 1: Chat History =====
+  const historySheet = workbook.addWorksheet('Chat History');
+  historySheet.columns = [
+    { header: 'Date & Time', key: 'timestamp', width: 20 },
+    { header: 'User Message', key: 'user_message', width: 50 },
+    { header: 'AI Response', key: 'ai_response', width: 50 },
+    { header: 'Response Type', key: 'response_type', width: 15 },
+    { header: 'Mode', key: 'mode', width: 12 },
+    { header: 'Page', key: 'current_page', width: 15 }
+  ];
+
+  // Style header row
+  historySheet.getRow(1).font = { bold: true };
+  historySheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF1E3A8A' }
+  };
+  historySheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+  // Add data
+  chatLogs.forEach(log => {
+    historySheet.addRow({
+      timestamp: new Date(log.created_at).toLocaleString(),
+      user_message: log.user_message,
+      ai_response: log.ai_response,
+      response_type: log.response_type,
+      mode: log.mode === 'fast' ? 'Do it for me' : 'Teach me',
+      current_page: log.current_page
+    });
+  });
+
+  // ===== SHEET 2: Summary Statistics =====
+  const summarySheet = workbook.addWorksheet('Summary');
+
+  // Calculate stats
+  const totalConversations = chatLogs.length;
+  const fastModeCount = chatLogs.filter(l => l.mode === 'fast').length;
+  const guidedModeCount = chatLogs.filter(l => l.mode === 'guided').length;
+  const actionCount = chatLogs.filter(l => l.response_type === 'action').length;
+  const questionCount = chatLogs.filter(l => l.response_type === 'question').length;
+
+  // Group by date for daily stats
+  const dailyStats = {};
+  chatLogs.forEach(log => {
+    const date = new Date(log.created_at).toISOString().split('T')[0];
+    dailyStats[date] = (dailyStats[date] || 0) + 1;
+  });
+
+  // Group by hour for peak hours
+  const hourlyStats = {};
+  chatLogs.forEach(log => {
+    const hour = new Date(log.created_at).getHours();
+    hourlyStats[hour] = (hourlyStats[hour] || 0) + 1;
+  });
+  const peakHour = Object.entries(hourlyStats).sort((a, b) => b[1] - a[1])[0];
+
+  // Add summary data
+  summarySheet.columns = [
+    { header: 'Metric', key: 'metric', width: 30 },
+    { header: 'Value', key: 'value', width: 25 }
+  ];
+  summarySheet.getRow(1).font = { bold: true };
+  summarySheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF1E3A8A' }
+  };
+  summarySheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+  summarySheet.addRow({ metric: 'Account Name', value: keyData.name });
+  summarySheet.addRow({ metric: 'Tier', value: keyData.tier });
+  summarySheet.addRow({ metric: 'Report Generated', value: new Date().toLocaleString() });
+  summarySheet.addRow({ metric: '', value: '' });
+  summarySheet.addRow({ metric: 'Total Conversations', value: totalConversations });
+  summarySheet.addRow({ metric: 'Do it for me Mode', value: fastModeCount });
+  summarySheet.addRow({ metric: 'Teach me Mode', value: guidedModeCount });
+  summarySheet.addRow({ metric: '', value: '' });
+  summarySheet.addRow({ metric: 'Actions Executed', value: actionCount });
+  summarySheet.addRow({ metric: 'Questions Asked', value: questionCount });
+  summarySheet.addRow({ metric: '', value: '' });
+  summarySheet.addRow({ metric: 'Peak Usage Hour', value: peakHour ? `${peakHour[0]}:00 (${peakHour[1]} chats)` : 'N/A' });
+  summarySheet.addRow({ metric: 'Days with Activity', value: Object.keys(dailyStats).length });
+
+  // ===== SHEET 3: Daily Usage =====
+  const dailySheet = workbook.addWorksheet('Daily Usage');
+  dailySheet.columns = [
+    { header: 'Date', key: 'date', width: 15 },
+    { header: 'Conversations', key: 'count', width: 15 }
+  ];
+  dailySheet.getRow(1).font = { bold: true };
+  dailySheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF1E3A8A' }
+  };
+  dailySheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+  Object.entries(dailyStats)
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .forEach(([date, count]) => {
+      dailySheet.addRow({ date, count });
+    });
+
+  // ===== SHEET 4: Common Questions =====
+  const questionsSheet = workbook.addWorksheet('Common Questions');
+
+  // Count message frequency
+  const messageCounts = {};
+  chatLogs.forEach(log => {
+    const msg = log.user_message.toLowerCase().trim();
+    messageCounts[msg] = (messageCounts[msg] || 0) + 1;
+  });
+
+  const topQuestions = Object.entries(messageCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 50);
+
+  questionsSheet.columns = [
+    { header: 'Question/Request', key: 'question', width: 60 },
+    { header: 'Times Asked', key: 'count', width: 15 }
+  ];
+  questionsSheet.getRow(1).font = { bold: true };
+  questionsSheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF1E3A8A' }
+  };
+  questionsSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+  topQuestions.forEach(([question, count]) => {
+    questionsSheet.addRow({ question, count });
+  });
+
+  // Generate buffer
+  const buffer = await workbook.xlsx.writeBuffer();
+  return buffer;
 }
 
 // ============================================
@@ -582,6 +814,102 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   console.log('Page:', currentPage);
   console.log('State:', JSON.stringify(currentState || {}).substring(0, 200));
 
+  // ============================================
+  // ANALYTICS TRIGGER HANDLING (Before OpenAI)
+  // ============================================
+
+  // Check if there's a pending password verification for this API key
+  const pendingRequest = pendingAnalyticsRequests.get(req.apiKey);
+  if (pendingRequest && Date.now() - pendingRequest.timestamp < 300000) { // 5 min timeout
+    // User is providing password
+    const keyData = loadApiKeys().keys[req.apiKey];
+    const correctPassword = keyData?.analyticsPassword;
+
+    if (!correctPassword) {
+      pendingAnalyticsRequests.delete(req.apiKey);
+      return res.json({
+        type: 'error',
+        message: 'Analytics password not set up for this account. Please contact support to enable analytics.'
+      });
+    }
+
+    if (message.trim() === correctPassword) {
+      // Password correct - generate Excel
+      pendingAnalyticsRequests.delete(req.apiKey);
+      console.log('Password verified - generating analytics Excel...');
+
+      try {
+        const excelBuffer = await generateAnalyticsExcel(req.apiKey, keyData);
+
+        // Convert to base64 for sending through JSON
+        const base64Excel = excelBuffer.toString('base64');
+
+        return res.json({
+          type: 'analytics_download',
+          message: 'Here is your analytics report! Click the button below to download your Excel file.',
+          downloadData: {
+            filename: `invocursor-analytics-${new Date().toISOString().split('T')[0]}.xlsx`,
+            base64: base64Excel,
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          }
+        });
+      } catch (e) {
+        console.error('Excel generation error:', e.message);
+        return res.json({
+          type: 'error',
+          message: 'Failed to generate analytics: ' + e.message
+        });
+      }
+    } else {
+      // Wrong password
+      return res.json({
+        type: 'question',
+        message: 'Incorrect password. Please try again or type "cancel" to go back to normal chat.'
+      });
+    }
+  }
+
+  // Check if user wants to cancel analytics
+  if (pendingRequest && message.toLowerCase().trim() === 'cancel') {
+    pendingAnalyticsRequests.delete(req.apiKey);
+    return res.json({
+      type: 'explanation',
+      message: 'Analytics request cancelled. How else can I help you?'
+    });
+  }
+
+  // Check if this is an analytics trigger
+  if (isAnalyticsTrigger(message)) {
+    // Check if user is on Growth tier
+    const keyData = loadApiKeys().keys[req.apiKey];
+    if (keyData?.tier !== 'growth') {
+      return res.json({
+        type: 'explanation',
+        message: 'Analytics and chat history export is available on the Growth plan. You are currently on the ' + (keyData?.tier || 'free') + ' plan. Contact us to upgrade!'
+      });
+    }
+
+    // Check if Supabase is configured
+    if (!supabase) {
+      return res.json({
+        type: 'error',
+        message: 'Analytics service is not available at the moment. Please try again later.'
+      });
+    }
+
+    // Set pending request and ask for password
+    pendingAnalyticsRequests.set(req.apiKey, { timestamp: Date.now() });
+
+    return res.json({
+      type: 'question',
+      message: 'To access your analytics and chat history, please enter your analytics password. (Type "cancel" to go back)'
+    });
+  }
+
+  // ============================================
+  // NORMAL CHAT FLOW
+  // ============================================
+
   const config = loadConfig(configName);
   if (!config) {
     return res.json({ error: 'Config not found' });
@@ -615,7 +943,20 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
 
     const parsed = JSON.parse(response);
 
+    // Log to file
     logRequest(req.apiKey, message, configName, true, Date.now() - startTime);
+
+    // Log to Supabase (async, don't wait)
+    logChatToSupabase(
+      req.apiKey,
+      message,
+      parsed.message || JSON.stringify(parsed),
+      parsed.type,
+      mode,
+      currentPage,
+      configName
+    );
+
     res.json(parsed);
 
   } catch (e) {
@@ -870,11 +1211,40 @@ app.get('/admin/keys', (req, res) => {
       tier: tier,
       weeklyLimit: tierConfig.weeklyLimit,
       configs: value.configs,
-      created: value.created
+      created: value.created,
+      hasAnalyticsPassword: !!value.analyticsPassword
     };
   }
 
   res.json({ keys: masked, tiers: TIERS });
+});
+
+// Set analytics password for a customer
+app.post('/admin/set-analytics-password', (req, res) => {
+  const { apiKey, password, adminSecret } = req.body;
+
+  if (adminSecret !== 'invocursor-admin-2024') {
+    return res.status(401).json({ error: 'Invalid admin secret' });
+  }
+
+  if (!apiKey || !password) {
+    return res.status(400).json({ error: 'API key and password are required' });
+  }
+
+  const data = loadApiKeys();
+
+  if (!data.keys[apiKey]) {
+    return res.status(404).json({ error: 'API key not found' });
+  }
+
+  // Set the analytics password
+  data.keys[apiKey].analyticsPassword = password;
+  saveApiKeys(data);
+
+  res.json({
+    success: true,
+    message: `Analytics password set for ${data.keys[apiKey].name}. They can now use "show analytics" in chat.`
+  });
 });
 
 // ============================================

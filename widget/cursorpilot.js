@@ -518,6 +518,34 @@
     return new Promise(r => setTimeout(r, ms));
   }
 
+  // Download file from base64 data
+  function downloadFile(downloadData) {
+    try {
+      // Convert base64 to blob
+      const byteCharacters = atob(downloadData.base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: downloadData.mimeType });
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = downloadData.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      log('Download started!', 'cp-done');
+    } catch (e) {
+      log('Download failed: ' + e.message, 'cp-error');
+    }
+  }
+
   function getCurrentPage() {
     const activeTab = document.querySelector('.nav-tab.active, [data-active="true"], .tab.active');
     if (activeTab?.dataset?.page) return activeTab.dataset.page;
@@ -866,6 +894,31 @@
           log(responseMessage, 'cp-assistant');
           if (data.plan && data.plan.length > 0) {
             await executePlan(data.plan, data.explanations || []);
+          }
+          break;
+
+        case 'analytics_download':
+          log(responseMessage, 'cp-assistant');
+          if (data.downloadData) {
+            // Create download button
+            const downloadBtn = document.createElement('button');
+            downloadBtn.textContent = 'Download Analytics Report';
+            downloadBtn.style.cssText = `
+              display: block;
+              margin: 10px 0;
+              padding: 12px 20px;
+              background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+              color: white;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              font-weight: 600;
+              font-size: 14px;
+              width: 100%;
+            `;
+            downloadBtn.onclick = () => downloadFile(data.downloadData);
+            logEl.appendChild(downloadBtn);
+            logEl.scrollTop = logEl.scrollHeight;
           }
           break;
 
